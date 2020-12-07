@@ -53,20 +53,26 @@ struct pagina{ // Pagina completa
     struct elemento_pagina *inicio;
 };
 
+//Funciones que crean las estructuras necesarias para que el programa funcione
 struct nodo *crea_nodo(int id_pac, char *nom_pac, char *nom2_pac, char *ap_pac, char *am_pac, int edad_pac, float peso_pac);
 struct elemento_pagina *crea_elemento_pagina();
 struct pagina *crea_pagina();
 
-int contador_elementos(struct elemento_pagina *inicio);
-struct elemento_pagina **obtener_centro(struct elemento_pagina **raiz, int contador);
-int insertar_actual(struct elemento_pagina **inicio, struct elemento_pagina *dato);
-
+//Funciones necesarias para la insercion
 int inserta_nodo(struct pagina **raiz, int id_pac, char *nom_pac, char *nom2_pac, char *ap_pac, char *am_pac, int edad_pac, float peso_pac, struct elemento_pagina **pAuxiliar);
 int inserta_nodo_pagina(struct elemento_pagina **inicio, int id_pac, char *nom_pac, char *nom2_pac, char *ap_pac, char *am_pac, int edad_pac, float peso_pac, struct elemento_pagina **pAuxiliar);
-int redirecciona_derecha(struct pagina **arbol);
+int insertar_actual(struct elemento_pagina **inicio, struct elemento_pagina *dato);
+int contador_elementos(struct elemento_pagina *inicio);
+struct elemento_pagina **obtener_centro(struct elemento_pagina **raiz, int contador);
 
-int mostrar_arbol(struct elemento_pagina *elemento, int contador);
-int arbol_hijos(struct pagina *listado, int contador, int hoja);
+//Funciones que permiten mostrar el arbol B+ en su totalidad
+void mostrar_arbol(struct elemento_pagina *elemento, int contador);
+void arbol_hijos(struct pagina *listado, int contador, int hoja);
+
+//Funciones de archivos
+int guarda_arbol(struct elemento_pagina *arbol);
+void escribe_datos(FILE *archivo, struct elemento_pagina *arbol);
+void acceso_recursivo_arbol(FILE *archivo, struct pagina *listado);
 
 void creditos();
 
@@ -101,59 +107,48 @@ int main(int argc, char const *argv[])
                 printf("Peso: ");
                 scanf("%f", &peso_pac);
                 inserta_nodo(&raiz, id_pac, nombre_pac, nombre2_pac, ap_pac, am_pac, edad_pac, peso_pac, &res);
-                res=NULL;
-                redirecciona_derecha(&raiz);*/
+                res=NULL;*/
                 inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,5,"Susana","","Sanchez","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,7,"Margarita","","Ruiz","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,3,"Pedro","","Loyo","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,1,"Juan","","Ocampo","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,4,"Lucia","","Perez","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,12,"Esteban","","Hernandez","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,11,"Maria","","Lopez","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,8,"Edith","","Ortiz","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,9,"Angel","","Mercado","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,10,"Salma","","Romero","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,2,"Perla","","Portugal","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,14,"Marcos","","Cruz","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,13,"Jose","","Rodriguez","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
                 inserta_nodo(&raiz,15,"Adriana","","Alvarez","Palacios",20,33.55,&res);
                 res = NULL;
-                redirecciona_derecha(&raiz);
+                inserta_nodo(&raiz,16,"Adriana","","Alvarez","Palacios",20,33.55,&res);
+                res = NULL;
+                printf("Pacientes registrados correctamente!\n\n");
                 break;
             };
             case 2:{
+                printf("Elimina\n");
                 break;
             };
             case 3:{
+                printf("Busca\n");
                 break;
             };
             case 4:{
@@ -169,6 +164,8 @@ int main(int argc, char const *argv[])
                 break;
             };
             case 6:{
+                if(raiz && raiz->inicio) guarda_arbol(raiz->inicio);
+                else printf("-No existe ningun dato para almacenar-\n");
                 break;
             };
             case 7:{
@@ -234,32 +231,56 @@ int inserta_nodo(struct pagina **raiz, int id_pac, char *nom_pac, char *nom2_pac
     int cant_elementos=contador_elementos((*raiz)->inicio);
     
     if (cant_elementos>2*d){ //Esta funcion es la que nos va a permitir partir la pagina
+        //Calculamos el centro en la pagina actual
         struct elemento_pagina **centro=obtener_centro(&(*raiz)->inicio,0); 
-        struct elemento_pagina *pCopia=NULL;
+        //Si el centro no tiene hijos...
+        if(!((*centro)->paciente->izquierda || (*centro)->paciente->derecha)){
+            struct elemento_pagina *pCopia=NULL;
+            
+            pCopia=crea_elemento_pagina();
+            pCopia->paciente=NULL;
+            pCopia->siguiente=NULL;
+            pCopia->paciente=crea_nodo((*centro)->paciente->id,"","", "", "", 0,0);
+
+            if (!(centro || pCopia)) return 0;
         
-        pCopia=crea_elemento_pagina();
-        pCopia->paciente=NULL;
-        pCopia->siguiente=NULL;
-        pCopia->paciente=crea_nodo((*centro)->paciente->id,"","", "", "", 0,0);
+            struct pagina *izquierda=crea_pagina();
+            struct pagina *derecha=crea_pagina();
+            if (!(izquierda || derecha)) return 0;
 
+            pCopia->paciente->izquierda=izquierda;
+            pCopia->paciente->derecha=derecha;
 
-        if (!(centro || pCopia)) return 0;
+            izquierda->inicio=(*raiz)->inicio;
+            derecha->inicio=(*centro);
+            
+            (*raiz)->inicio=pCopia;
+            pCopia->siguiente=NULL;
+            *pAuxiliar=(*raiz)->inicio;
     
-        struct pagina *izquierda=crea_pagina();
-        struct pagina *derecha=crea_pagina();
-        if (!(izquierda || derecha)) return 0;
-
-        izquierda->inicio=(*raiz)->inicio;
-        derecha->inicio=(*centro);
-
-        pCopia->paciente->izquierda=izquierda;
-        pCopia->paciente->derecha=derecha;
+            (*centro)=NULL;          
+            return 0;
+        }
+        else{            //Pero si si tiene hijos, entonces hay que tratarlo basicamente como un arbol B pues la clave vacia debe de subir
+            if (!(centro)) return 0;
         
-        (*raiz)->inicio=pCopia;
-        *pAuxiliar=(*raiz)->inicio;
+            struct pagina *izquierda=crea_pagina();
+            struct pagina *derecha=crea_pagina();
+            if (!(izquierda || derecha)) return -1;
 
-        (*centro)=NULL;          
-        return 0;
+            (*centro)->paciente->izquierda=izquierda;
+            (*centro)->paciente->derecha=derecha;
+
+            izquierda->inicio=(*raiz)->inicio;
+            derecha->inicio=(*centro)->siguiente;         
+            
+            (*raiz)->inicio=*centro;
+            (*centro)->siguiente=NULL;
+            *pAuxiliar=(*raiz)->inicio;
+
+            (*centro)=NULL;  
+            return 0;
+        }
     }
     return 0;
 }
@@ -276,23 +297,32 @@ struct elemento_pagina **obtener_centro(struct elemento_pagina **raiz, int conta
 }
 
 int insertar_actual(struct elemento_pagina **inicio, struct elemento_pagina *pEPagina){
-    if (!*inicio)
-    {
+    if (!*inicio){
         *inicio=pEPagina;
         pEPagina->siguiente=NULL;
         return 0;
     }
-    if(((*inicio)->paciente->id > pEPagina->paciente->id))
-    {
+    if(((*inicio)->paciente->id > pEPagina->paciente->id)){
+        if((*inicio)->paciente->izquierda && pEPagina->paciente->izquierda ){
+            pEPagina->paciente->derecha=(*inicio)->paciente->izquierda;
+        }
         pEPagina->siguiente=*inicio;
         *inicio=pEPagina;
+        return 0;
+    }
+    if(!(*inicio)->siguiente){
+        if((*inicio)->paciente->izquierda && pEPagina->paciente->izquierda ){
+            (*inicio)->paciente->derecha=pEPagina->paciente->izquierda;
+        }
+        (*inicio)->siguiente=pEPagina;
+        pEPagina->siguiente=NULL;
         return 0;
     }
     return insertar_actual(&(*inicio)->siguiente, pEPagina);
 }
 
 //La siguiente funcion se encargara de insertar el nodo en el elemento pagina,
-// servira mas que nada para ubicar si tiene que ir a la derech o a la izquierda
+// servira mas que nada para ubicar si tiene que ir a la derecha o a la izquierda
 int inserta_nodo_pagina(struct elemento_pagina **inicio, int id_pac, char *nom_pac, char *nom2_pac, char *ap_pac, char *am_pac, int edad_pac, float peso_pac, struct elemento_pagina **pAuxiliar){
     if(!*inicio){
         if(!(*inicio=crea_elemento_pagina())) return -1; // Se trata de crear un elemento pagina en inicio, si no se pudo retorna a 0
@@ -325,28 +355,16 @@ int inserta_nodo_pagina(struct elemento_pagina **inicio, int id_pac, char *nom_p
     return inserta_nodo_pagina(&((*inicio)->siguiente),id_pac, nom_pac, nom2_pac, ap_pac, am_pac, edad_pac, peso_pac, pAuxiliar);
 }
 
-int redirecciona_derecha(struct pagina **arbol){
-    if((*arbol)){
-        struct elemento_pagina *pAux=(*arbol)->inicio;
-        while(pAux){
-            if(pAux->paciente->izquierda && pAux->paciente->derecha && pAux->siguiente)
-                pAux->paciente->derecha=pAux->siguiente->paciente->izquierda;
-            pAux=pAux->siguiente;
-        }
-        return 0;
-    }
-    else return -1;
-}
-
 void creditos(){
     printf("Este proyecto fue realizado por la estudiante\nZulema Concepción Luis Cruz (S18001442)\nde la carrera Ingenieria Informatica\nde la Universidad Veracruzana\n\n");
-    printf("\nTrata de un programa que realiza una Base de Datos de los pacientes\ndentro de un hospital haciendo uso de recursividad, archivos\ny Arboles B+\n\n");
+    printf("\nEs un programa que realiza una base de datos de los pacientes\ndentro de un hospital haciendo uso de recursividad, archivos\ny Arboles B+\n");
+    printf("                                          _\n");
     printf("Programa realizado para la materia de Diseno de Programas\nimpartida por el Dr. Luis Felipe Marin Urias\n\n");
     printf("\n\nDiciembre 2020\n");
     return;
 }
 
-int mostrar_arbol(struct elemento_pagina *elemento, int contador){
+void mostrar_arbol(struct elemento_pagina *elemento, int contador){
     if(elemento){
         for(int i=0; i<contador; i++) printf("   ");
         if(strcmp(elemento->paciente->nombre, "")==0) printf("|__ Clave: %i\n", elemento->paciente->id);
@@ -356,10 +374,10 @@ int mostrar_arbol(struct elemento_pagina *elemento, int contador){
         arbol_hijos(elemento->paciente->derecha, contador+1, 2);
         mostrar_arbol(elemento->siguiente, contador);
     }
-    return 0;
+    return;
 }
 
-int arbol_hijos(struct pagina *listado, int contador, int hoja){
+void arbol_hijos(struct pagina *listado, int contador, int hoja){
     if(listado){
         for(int i=0; i<contador; i++) printf("   ");
         printf("|-*HOJA %i*-\n", hoja);
@@ -367,5 +385,65 @@ int arbol_hijos(struct pagina *listado, int contador, int hoja){
         for(int i=0; i<contador; i++) printf("   ");
         printf("|\n");
     }
+    return;
+}
+
+int guarda_arbol(struct elemento_pagina *arbol){
+    FILE *archivo;
+    
+    archivo=fopen("bd_hospital.zule", "ab");
+    remove("bd_hospital.bin"); //Borramos archivo para evitar duplicidad de datos
+    archivo=fopen("bd_hospital.zule", "ab"); //Y lo volvemos a abrir
+
+    if(!archivo){
+        printf("No se pudo crear el archivo\n\n");
+        fclose(archivo);
+        return -1;
+    }
+
+    escribe_datos(archivo, arbol);
+
+    fclose(archivo);
     return 0;
+}
+
+void escribe_datos(FILE *archivo, struct elemento_pagina *arbol){
+    if(arbol){        
+        int estado; //Comprueba que el nodo tenga un hijo a la derecha y que lo comparta con el nodo siguiente:)
+        if(arbol->paciente->derecha) estado=1;
+        if(arbol->siguiente){
+            if(arbol->siguiente->paciente->izquierda) estado++;
+        }
+
+        if(estado==2){
+            struct pagina *pActual=arbol->paciente->derecha;
+            struct pagina *pSiguiente=arbol->siguiente->paciente->izquierda;
+            if(pActual==pSiguiente){
+                if(strcmp(arbol->paciente->nombre, "")==0); //Asi no guardaremos en el fichero las claves que contienen datos vacios
+                else{
+                    fwrite(&(arbol->paciente), sizeof(struct nodo), 1, archivo);
+                    //printf("|- %i %s %s\n", arbol->paciente->id, arbol->paciente->nombre, arbol->paciente->apellido_paterno);
+                }
+                acceso_recursivo_arbol(archivo, arbol->paciente->izquierda);
+                escribe_datos(archivo, arbol->siguiente);
+            }
+        }
+        else{
+            if(strcmp(arbol->paciente->nombre, "")==0); //Asi no guardaremos en el fichero las claves que contienen datos vacios
+            else{
+                fwrite(&(arbol->paciente), sizeof(struct nodo), 1, archivo);
+                //printf("|- %i %s %s\n", arbol->paciente->id, arbol->paciente->nombre, arbol->paciente->apellido_paterno);
+            }
+            acceso_recursivo_arbol(archivo, arbol->paciente->izquierda);
+            escribe_datos(archivo, arbol->siguiente);
+            acceso_recursivo_arbol(archivo, arbol->paciente->derecha);
+        }
+    }
+    return;
+}
+void acceso_recursivo_arbol(FILE *archivo, struct pagina *listado){
+    if(listado){
+        escribe_datos(archivo, listado->inicio);
+    }
+    return;
 }
