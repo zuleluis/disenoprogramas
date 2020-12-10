@@ -1,8 +1,6 @@
 /*Realizar un árbol B+ que:
 *- Elimine 
 *- Fusione - 2 puntos
-- Busque 
-- Muestre el camino de busqueda.
 - Imprima que operaciones realizo durante las restructuraciones. - 3 puntos
 - Medir el tiempo de búsqueda. (time.h)
 
@@ -57,17 +55,17 @@ void arbol_hijos(struct pagina *listado, int contador, int hoja);
 int guarda_arbol(struct elemento_pagina *arbol);
 void escribe_datos(FILE *archivo, struct elemento_pagina *arbol);
 void acceso_recursivo_arbol(FILE *archivo, struct pagina *listado);
-//int agrega_arbol();
 
 //Busqueda
 int buscar_dato(struct elemento_pagina *arbol, int id_pac);
-void auxiliar_busqueda(struct pagina *listado, int id_pac);
+int busqueda_invisible(struct elemento_pagina *arbol, int id_pac); //Esta funcion es para comprobar que el ID a insertar no esta registrado previamente
 
 void creditos();
 
 int main(int argc, char const *argv[])
 {
     struct pagina *raiz=NULL;
+    raiz->inicio==NULL;
     struct elemento_pagina *res= NULL;
     int opcion, id_pac, edad_pac, contador, op_arch;
     char nombre_pac[30], nombre2_pac[30], ap_pac[30], am_pac[30];
@@ -81,9 +79,15 @@ int main(int argc, char const *argv[])
         switch(opcion){
             case 1:{
                 printf("R E G I S T R O   D E   P A C I E N T E S\n\n");
-                /*printf("Ingresa los siguientes datos del paciente a registrar\n");
+                printf("Ingresa los siguientes datos del paciente a registrar\n");
                 printf("ID: ");
                 scanf("%i", &id_pac);
+                if(raiz){
+                    if(busqueda_invisible(raiz->inicio, id_pac)==0){
+                        printf("ERROR: El ID a ingresar ya existe en el sistema");
+                        break;
+                    }
+                }
                 printf("Nombre: ");
                 scanf("%s", nombre_pac);
                 printf("Segundo nombre (de no tener, ingresa X): ");
@@ -97,8 +101,8 @@ int main(int argc, char const *argv[])
                 printf("Peso: ");
                 scanf("%f", &peso_pac);
                 inserta_nodo(&raiz, id_pac, nombre_pac, nombre2_pac, ap_pac, am_pac, edad_pac, peso_pac, &res);
-                res=NULL;*/
-                inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
+                res=NULL;
+                /*inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,5,"Susana","","Sanchez","Palacios",20,33.55,&res);
                 res = NULL;
@@ -113,8 +117,8 @@ int main(int argc, char const *argv[])
                 inserta_nodo(&raiz,12,"Esteban","","Hernandez","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,11,"Maria","","Lopez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,8,"Edith","","Ortiz","Palacios",20,33.55,&res);
+                res = NULL;*/
+                /*inserta_nodo(&raiz,8,"Edith","","Ortiz","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,9,"Angel","","Mercado","Palacios",20,33.55,&res);
                 res = NULL;
@@ -129,7 +133,7 @@ int main(int argc, char const *argv[])
                 inserta_nodo(&raiz,15,"Adriana","","Alvarez","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,16,"Adriana","","Alvarez","Palacios",20,33.55,&res);
-                res = NULL;
+                res = NULL;*/
                 printf("Pacientes registrados correctamente!\n\n");
                 break;
             };
@@ -143,8 +147,7 @@ int main(int argc, char const *argv[])
                     printf("Ingresa el ID del paciente a buscar\n");
                     printf("ID: ");
                     scanf("%i", &id_pac);
-                    if(buscar_dato(raiz->inicio, id_pac)==0) printf("Paciente localizado\n\n");
-                    else printf("No se encontro al paciente\n\n");
+                    if(buscar_dato(raiz->inicio, id_pac)!=0) printf("El paciente no fue localizado\n\n");
                 }
                 else printf("-No existen pacientes registrados-\n");
                 break;
@@ -164,7 +167,7 @@ int main(int argc, char const *argv[])
             };
             case 6:{
                 printf("G U A R D A R   A R C H I V O   D E   P A C I E N T E S\n\n");
-                printf("\nSelecciona una de las siguientes opciones\n\t[1]: Agregar datos a base de datos existente\n\t[2]: Sobreescribir base de datos existente\n\n\tOpcion: ");
+                printf("\nSelecciona una de las siguientes opciones\n\t[1]: Agregar datos a base de datos existente\n\t[2]: Sobreescribir base de datos existente\n\t[Otro numero]: Regresar al menu\n\n\tOpcion: ");
                 scanf("%i", &op_arch);
                 switch (op_arch){
                     case 1:{
@@ -179,6 +182,7 @@ int main(int argc, char const *argv[])
                         break;
                     };
                     default:{
+                        printf("Regresando al menu...\n\n");
                         break;
                     };
                 }
@@ -466,27 +470,64 @@ void acceso_recursivo_arbol(FILE *archivo, struct pagina *listado){
 
 int buscar_dato(struct elemento_pagina *arbol, int id_pac){
     if(arbol){
-        if(id_pac>arbol->paciente->id){ //Si id_pac es mayor que el nodo que esta presente se va a la derecha
-            printf("Comparando...\n%i > %i\n", id_pac, arbol->paciente->id);
-            auxiliar_busqueda(arbol->paciente->derecha, id_pac);
-            buscar_dato(arbol->siguiente, id_pac);
-            auxiliar_busqueda(arbol->paciente->izquierda, id_pac);
+        //Primero, se hara la comparacion de si el ID a buscar coincide con el ID encontrado siempre y cuando no sea un nodo auxiliar (o nulo, en este caso)
+        //Esto nos asegura que ya estamos en la fila de las hojas 
+        if(id_pac==arbol->paciente->id && strcmp(arbol->paciente->nombre,"")!=0){
+            printf("Comparando...\n%i = %i\n\n", id_pac, arbol->paciente->id);
+            printf("P A C I E N T E   L O C A L I Z A D O\n\n");
+            printf("ID: %i\nNombre(s): %s %s\n", arbol->paciente->id, arbol->paciente->nombre, arbol->paciente->segundo_nombre);
+            printf("Apellido paterno: %s\nApellido materno: %s\nEdad: %i\nPeso: %.2f kg\n\n", arbol->paciente->apellido_paterno, arbol->paciente->apellido_materno, arbol->paciente->edad, arbol->paciente->peso);
+            return 0;
         }
-        if(id_pac<arbol->paciente->id){ //Si id_pac es menor se va a la izquierda
-            printf("Comparando...\n%i < %i\n", id_pac, arbol->paciente->id);
-            auxiliar_busqueda(arbol->paciente->izquierda, id_pac);
-            buscar_dato(arbol->siguiente, id_pac);
-            auxiliar_busqueda(arbol->paciente->derecha, id_pac);
+        else{
+            if(id_pac>=arbol->paciente->id){ //Si id_pac es mayor que el nodo que esta presente se va a la derecha
+                printf("Comparando...\n%i - %i\n", id_pac, arbol->paciente->id);
+                //SI el ID a buscar es mayor que el que se esta comparando pero existe la posibilidad de seguir avanzando en la fila
+                //Para compararlo con los otros nodos, entonces avanzamos
+                if(id_pac>arbol->paciente->id && arbol->siguiente) return buscar_dato(arbol->siguiente, id_pac);
+                else{ //Si no, entonces bajamos a la derecha siempre y cuando exista, sino, significa que ya estamos en las hojas y por ende la busqueda termina
+                    if(arbol->paciente->derecha){
+                        printf("Es momento de bajar a la derecha\n\n");
+                        return buscar_dato(arbol->paciente->derecha->inicio, id_pac);
+                    }
+                    else{
+                        printf("No es posible seguir buscando\n");
+                        return -1;
+                    }
+                }
+            }
+            else{ //Si id_pac es menor se va para abajo, a la izquierda
+                printf("Comparando...\n%i - %i\n", id_pac, arbol->paciente->id);
+                if(arbol->paciente->izquierda){ //Si es posible seguir bajando lo haremos, sino, entonces ya estamos en las hojas y la busqueda termina
+                    printf("Es momento de bajar a la izquierda\n\n");
+                    return buscar_dato(arbol->paciente->izquierda->inicio, id_pac);
+                }
+                else{
+                    printf("No es posible seguir buscando\n");
+                    return -1;   
+                }
+            }
         }
-        if(arbol->paciente->id==id_pac) return 0;
-        //buscar_dato(arbol->siguiente, id_pac);
     }
     else return -1;
 }
 
-void auxiliar_busqueda(struct pagina *listado, int id_pac){
-    if(listado){
-        buscar_dato(listado->inicio, id_pac);
+int busqueda_invisible(struct elemento_pagina *arbol, int id_pac){
+    if(arbol){
+        if(id_pac==arbol->paciente->id && strcmp(arbol->paciente->nombre,"")!=0) return 0;
+        else{
+            if(id_pac>=arbol->paciente->id){ 
+                if(id_pac>arbol->paciente->id && arbol->siguiente) return busqueda_invisible(arbol->siguiente, id_pac);
+                else{
+                    if(arbol->paciente->derecha) return busqueda_invisible(arbol->paciente->derecha->inicio, id_pac);
+                    else return -1;
+                }
+            }
+            else{
+                if(arbol->paciente->izquierda) return busqueda_invisible(arbol->paciente->izquierda->inicio, id_pac);
+                else return -1;   
+            }
+        }
     }
-    return;
+    else return -1;
 }
