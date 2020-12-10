@@ -25,6 +25,16 @@ struct nodo{
     struct pagina *derecha; 
 };
 
+struct datos{
+    int id;
+    char nombre[30];
+    char segundo_nombre[30];
+    char apellido_paterno[30];
+    char apellido_materno[30];
+    int edad;
+    float peso; //Variable que almacena el peso del paciente en kg
+};
+
 struct elemento_pagina{ // Se almacena cada nodo dentro del elemento pagina
     struct nodo *paciente;
     struct elemento_pagina *siguiente;
@@ -54,7 +64,7 @@ void arbol_hijos(struct pagina *listado, int contador, int hoja);
 int guarda_arbol(struct elemento_pagina *arbol);
 void escribe_datos(FILE *archivo, struct elemento_pagina *arbol);
 void acceso_recursivo_arbol(FILE *archivo, struct pagina *listado);
-void lee_archivo();
+int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar);
 
 //Busqueda
 int buscar_dato(struct elemento_pagina *arbol, int id_pac);
@@ -102,7 +112,7 @@ int main(int argc, char const *argv[])
                 scanf("%f", &peso_pac);
                 inserta_nodo(&raiz, id_pac, nombre_pac, nombre2_pac, ap_pac, am_pac, edad_pac, peso_pac, &res);
                 res=NULL;*/
-                inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
+                /*inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,5,"Susana","","Sanchez","Palacios",20,33.55,&res);
                 res = NULL;
@@ -129,6 +139,39 @@ int main(int argc, char const *argv[])
                 inserta_nodo(&raiz,14,"Marcos","","Cruz","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,13,"Jose","","Rodriguez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,15,"Adriana","","Alvarez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,16,"Adriana","","Alvarez","Palacios",20,33.55,&res);
+                res = NULL;*/
+
+                inserta_nodo(&raiz,1,"Andres","","Mendez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,2,"Susana","","Sanchez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,3,"Margarita","","Ruiz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,4,"Pedro","","Loyo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,5,"Juan","","Ocampo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,6,"Lucia","","Perez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,7,"Esteban","","Hernandez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,8,"Maria","","Lopez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,9,"Edith","","Ortiz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,10,"Angel","","Mercado","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,11,"Salma","","Romero","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,12,"Perla","","Portugal","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,13,"Marcos","","Cruz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,14,"Jose","","Rodriguez","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,15,"Adriana","","Alvarez","Palacios",20,33.55,&res);
                 res = NULL;
@@ -174,7 +217,9 @@ int main(int argc, char const *argv[])
             };
             case 5:{
                 printf("C A R G A R   A R C H I V O   D E   P A C I E N T E S\n\n");
-                lee_archivo();
+                if(lee_archivo(&raiz, &res)==0) printf("Archivo cargado con exito\n\n");
+                else printf("ERROR: No fue posible cargar la base de datos requerida\n\n");
+                break;
                 break;
             };
             case 6:{
@@ -266,7 +311,7 @@ int inserta_nodo(struct pagina **raiz, int id_pac, char *nom_pac, char *nom2_pac
         //Calculamos el centro en la pagina actual
         struct elemento_pagina **centro=obtener_centro(&(*raiz)->inicio,0); 
         //Si el centro no tiene hijos...
-        if(!((*centro)->paciente->izquierda || (*centro)->paciente->derecha)){
+        if(!(*centro)->paciente->izquierda && !(*centro)->paciente->derecha){
             struct elemento_pagina *pCopia=NULL;
             
             pCopia=crea_elemento_pagina();
@@ -334,6 +379,7 @@ int insertar_actual(struct elemento_pagina **inicio, struct elemento_pagina *pEP
         pEPagina->siguiente=NULL;
         return 0;
     }
+    
     if(((*inicio)->paciente->id > pEPagina->paciente->id)){
         if((*inicio)->paciente->izquierda && pEPagina->paciente->izquierda ){
             pEPagina->paciente->derecha=(*inicio)->paciente->izquierda;
@@ -342,8 +388,9 @@ int insertar_actual(struct elemento_pagina **inicio, struct elemento_pagina *pEP
         *inicio=pEPagina;
         return 0;
     }
+
     if(!(*inicio)->siguiente){
-        if((*inicio)->paciente->izquierda && pEPagina->paciente->izquierda ){
+        if((*inicio)->paciente->derecha && pEPagina->paciente->izquierda ){
             (*inicio)->paciente->derecha=pEPagina->paciente->izquierda;
         }
         (*inicio)->siguiente=pEPagina;
@@ -453,16 +500,9 @@ void escribe_datos(FILE *archivo, struct elemento_pagina *arbol){
             if(pActual==pSiguiente){
                 if(strcmp(arbol->paciente->nombre, "")==0); //Asi no guardaremos en el fichero las claves que contienen datos vacios
                 else{
-                    /*arbol->paciente->izquierda=NULL;
-                    arbol->paciente->derecha=NULL;*/
-                    fwrite(&(arbol->paciente->id), sizeof(int), 1, archivo);
-                    fwrite(&(arbol->paciente->nombre), sizeof(char[30]), 1, archivo);
-                    fwrite(&(arbol->paciente->segundo_nombre), sizeof(char[30]), 1, archivo);
-                    fwrite(&(arbol->paciente->apellido_paterno), sizeof(char[30]), 1, archivo);
-                    fwrite(&(arbol->paciente->apellido_materno), sizeof(char[30]), 1, archivo);
-                    fwrite(&(arbol->paciente->edad), sizeof(int), 1, archivo);
-                    fwrite(&(arbol->paciente->peso), sizeof(float), 1, archivo);
-                    //fwrite(&(arbol->paciente), sizeof(struct nodo), 1, archivo);
+                    arbol->paciente->izquierda=NULL;
+                    arbol->paciente->derecha=NULL;
+                    fwrite(&(arbol->paciente), sizeof(struct nodo), 1, archivo);
                     //printf("|- %i %s %s\n", arbol->paciente->id, arbol->paciente->nombre, arbol->paciente->apellido_paterno);
                 }
                 acceso_recursivo_arbol(archivo, arbol->paciente->izquierda);
@@ -472,16 +512,9 @@ void escribe_datos(FILE *archivo, struct elemento_pagina *arbol){
         else{
             if(strcmp(arbol->paciente->nombre, "")==0); //Asi no guardaremos en el fichero las claves que contienen datos vacios
             else{
-                /*arbol->paciente->izquierda=NULL;
-                arbol->paciente->derecha=NULL;*/
-                fwrite(&(arbol->paciente->id), sizeof(int), 1, archivo);
-                fwrite(&(arbol->paciente->nombre), sizeof(char[30]), 1, archivo);
-                fwrite(&(arbol->paciente->segundo_nombre), sizeof(char[30]), 1, archivo);
-                fwrite(&(arbol->paciente->apellido_paterno), sizeof(char[30]), 1, archivo);
-                fwrite(&(arbol->paciente->apellido_materno), sizeof(char[30]), 1, archivo);
-                fwrite(&(arbol->paciente->edad), sizeof(int), 1, archivo);
-                fwrite(&(arbol->paciente->peso), sizeof(float), 1, archivo);
-                //fwrite(&(arbol->paciente), sizeof(struct nodo), 1, archivo);
+                arbol->paciente->izquierda=NULL;
+                arbol->paciente->derecha=NULL;
+                fwrite(&(arbol->paciente), sizeof(struct nodo), 1, archivo);
                 //printf("|- %i %s %s\n", arbol->paciente->id, arbol->paciente->nombre, arbol->paciente->apellido_paterno);
             }
             acceso_recursivo_arbol(archivo, arbol->paciente->izquierda);
@@ -568,33 +601,22 @@ int busqueda_invisible(struct elemento_pagina *arbol, int id_pac){
     else return -1;
 }
 
-void lee_archivo(){
+
+int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar){
     FILE *archivo;
     
     archivo=fopen("bd_hospital.zule", "rb");
 
-    if(!archivo){
-        printf("No fue posible abrir el archivo\n");
-        return;
-    }
+    if(!archivo) return -1;
 
-    struct elemento_pagina *pNuevo=crea_elemento_pagina();
-    if(!pNuevo){
-        printf("No se pudo reservar memoria para alojar nuevos pacientes\n\n");
-        return;
-    }
+    struct datos pNuevo;
 
     while(!feof(archivo)){
-        fread(&(pNuevo->paciente->id), sizeof(int), 1, archivo);
-        fread(&(pNuevo->paciente->nombre), sizeof(char[30]), 1, archivo);
-        fread(&(pNuevo->paciente->segundo_nombre), sizeof(char[30]), 1, archivo);
-        fread(&(pNuevo->paciente->apellido_paterno), sizeof(char[30]), 1, archivo);
-        fread(&(pNuevo->paciente->apellido_materno), sizeof(char[30]), 1, archivo);
-        fread(&(pNuevo->paciente->edad), sizeof(int), 1, archivo);
-        fread(&(pNuevo->paciente->peso), sizeof(float), 1, archivo);
-        //pNuevo->paciente->izquierda=NULL;
-        //pNuevo->paciente->derecha=NULL;
-        printf("%i %s\n", pNuevo->paciente->id, pNuevo->paciente->nombre);
+        while(fread(&pNuevo, sizeof(struct datos), 1, archivo)){
+			inserta_nodo(&*raiz, pNuevo.id, pNuevo.nombre, pNuevo.segundo_nombre, pNuevo.apellido_paterno, pNuevo.apellido_materno, pNuevo.edad, pNuevo.peso, pAuxiliar);
+            *pAuxiliar=NULL;
+		}
     }
     fclose(archivo);
+    return 0;
 }
