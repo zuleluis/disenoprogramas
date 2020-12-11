@@ -2,8 +2,6 @@
 *- Elimine 
 *- Fusione - 2 puntos
 - Imprima que operaciones realizo durante las restructuraciones. - 3 puntos
-
-- que guarde y carga en un archivo binario los datos del árbol - 3 puntos
 */
 
 #include <stdio.h>
@@ -61,14 +59,17 @@ void mostrar_arbol(struct elemento_pagina *elemento, int contador);
 void arbol_hijos(struct pagina *listado, int contador, int hoja);
 
 //Funciones de archivos
-int guarda_arbol(struct elemento_pagina *arbol);
+int guarda_arbol(struct elemento_pagina *arbol, char *nombre_archivo);
 void escribe_datos(FILE *archivo, struct elemento_pagina *arbol);
 void acceso_recursivo_arbol(FILE *archivo, struct pagina *listado);
-int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar);
+int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar, char *nombre_archivo);
+int crea_nuevo_archivo(struct elemento_pagina *arbol, char *nombre_archivo);
 
 //Busqueda
 int buscar_dato(struct elemento_pagina *arbol, int id_pac);
 int busqueda_invisible(struct elemento_pagina *arbol, int id_pac); //Esta funcion es para comprobar que el ID a insertar no esta registrado previamente
+
+//Eliminacion
 
 void creditos();
 
@@ -78,7 +79,7 @@ int main(int argc, char const *argv[])
     raiz->inicio==NULL;
     struct elemento_pagina *res= NULL;
     int opcion, id_pac, edad_pac, contador, op_arch;
-    char nombre_pac[30], nombre2_pac[30], ap_pac[30], am_pac[30];
+    char nombre_pac[30], nombre2_pac[30], ap_pac[30], am_pac[30], archivo[30];
     float peso_pac;
     do{
         printf("\n\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n");
@@ -89,12 +90,12 @@ int main(int argc, char const *argv[])
         switch(opcion){
             case 1:{
                 printf("R E G I S T R O   D E   P A C I E N T E S\n\n");
-                /*printf("Ingresa los siguientes datos del paciente a registrar\n");
+                printf("Ingresa los siguientes datos del paciente a registrar\n");
                 printf("ID: ");
                 scanf("%i", &id_pac);
                 if(raiz){
                     if(busqueda_invisible(raiz->inicio, id_pac)==0){
-                        printf("ERROR: El ID a ingresar ya existe en el sistema");
+                        printf("ERROR: El ID a ingresar ya existe en el sistema... Regresando al menu\n\n");
                         break;
                     }
                 }
@@ -111,78 +112,7 @@ int main(int argc, char const *argv[])
                 printf("Peso: ");
                 scanf("%f", &peso_pac);
                 inserta_nodo(&raiz, id_pac, nombre_pac, nombre2_pac, ap_pac, am_pac, edad_pac, peso_pac, &res);
-                res=NULL;*/
-                /*inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,5,"Susana","","Sanchez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,7,"Margarita","","Ruiz","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,3,"Pedro","","Loyo","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,1,"Juan","","Ocampo","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,4,"Lucia","","Perez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,12,"Esteban","","Hernandez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,11,"Maria","","Lopez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,8,"Edith","","Ortiz","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,9,"Angel","","Mercado","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,10,"Salma","","Romero","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,2,"Perla","","Portugal","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,14,"Marcos","","Cruz","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,13,"Jose","","Rodriguez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,15,"Adriana","","Alvarez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,16,"Lucia","","Perez","Palacios",20,33.55,&res);
-                res = NULL;*/
-
-                inserta_nodo(&raiz,1,"Andres","","Mendez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,2,"Susana","","Sanchez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,3,"Margarita","","Ruiz","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,4,"Pedro","","Loyo","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,5,"Juan","","Ocampo","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,6,"Lucia","","Perez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,7,"Esteban","","Hernandez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,8,"Maria","","Lopez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,9,"Edith","","Ortiz","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,10,"Angel","","Mercado","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,11,"Salma","","Romero","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,12,"Perla","","Portugal","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,13,"Marcos","","Cruz","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,14,"Jose","","Rodriguez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,15,"Adriana","","Alvarez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,16,"Lucia","","Perez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,17,"Domingo","","Ramirez","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,18,"Paola","","Reyes","Palacios",20,33.55,&res);
-                res = NULL;
-                inserta_nodo(&raiz,19,"Esteban","","Cruz","Palacios",20,33.55,&res);
-                res = NULL;
+                res=NULL;
                 printf("Pacientes registrados correctamente!\n\n");
                 break;
             };
@@ -223,12 +153,14 @@ int main(int argc, char const *argv[])
             };
             case 5:{
                 printf("C A R G A R   A R C H I V O   D E   P A C I E N T E S\n\n");
-                printf("Estas seguro?\n\t[1]: Si\n\t[Cualquier otro numero]: No\n\n\tOpcion: ");
+                printf("Ingresa el nombre del archivo que deseas cargar (sin extension): ");
+                scanf("%s", archivo);
+                printf("\nEstas seguro? Los pacientes que no esten en el arbol actual\nse cargaran automaticamente\n\t[1]: Si\n\t[Cualquier otro numero]: No\n\n\tOpcion: ");
                 scanf("%i", &op_arch);
                 switch(op_arch){
                     case 1:{
-                        if(lee_archivo(&raiz, &res)==0) printf("Archivo cargado con exito\n\n");
-                        else printf("ERROR: No fue posible cargar la base de datos requerida\n\n");
+                        if(lee_archivo(&raiz, &res, archivo)==0) printf("Archivo cargado con exito\n\n");
+                        else printf("ERROR: No fue posible cargar la base de datos requerida\nEs posible que no exista, favor de verificar\n\n");
                         break;
                     };
                     default:{
@@ -238,19 +170,39 @@ int main(int argc, char const *argv[])
                 break;
             };
             case 6:{
+                char archivo[30];
                 printf("G U A R D A R   A R C H I V O   D E   P A C I E N T E S\n\n");
-                printf("\nSelecciona una de las siguientes opciones\n\t[1]: Agregar datos a base de datos existente\n\t[2]: Sobreescribir base de datos existente\n\t[Otro numero]: Regresar al menu\n\n\tOpcion: ");
+                printf("\nSelecciona una de las siguientes opciones\n\t[1]: Crear nuevo archivo\n\t[2]: Sobreescribir archivo existente\n\t[Otro numero]: Regresar al menu\n\n\tOpcion: ");
                 scanf("%i", &op_arch);
                 switch (op_arch){
                     case 1:{
+                        printf("Ingresa el nombre del archivo que deseas crear (sin extension): ");
+                        scanf("%s", archivo);
+                        if(raiz && raiz->inicio){
+                            if(crea_nuevo_archivo(raiz->inicio,archivo)==0) printf("\nDatos guardados satisfactoriamente\n\n");
+                            else printf("\nNo fue posible guardar la informacion, el archivo ya existe o no se pudo crear\n\n");
+                        }
+                        else printf("-No existe ningun dato para almacenar-\n");
                         break;
                     };
                     case 2:{
-                        if(raiz && raiz->inicio){
-                            if(guarda_arbol(raiz->inicio)==0) printf("\nDatos guardados satisfactoriamente\n\n");
-                            else printf("\nNo fue posible guardar la informacion\n\n");
+                        printf("Ingresa el nombre del archivo que deseas sobreescribir (sin extension): ");
+                        scanf("%s", archivo);
+                        printf("\nEstas seguro? Se sobreescribira por completo el archivo seleccionado\n\t[1]: Si\n\t[Cualquier otro numero]: Cancelar\n\n\tOpcion: ");
+                        scanf("%i", &op_arch);
+                        switch(op_arch){
+                            case 1:{
+                                if(raiz && raiz->inicio){
+                                    if(guarda_arbol(raiz->inicio,archivo)==0) printf("\nDatos guardados satisfactoriamente\n\n");
+                                    else printf("\nNo fue posible guardar la informacion, es posible que no exista\nel archivo solicitado\n\n");
+                                }
+                                else printf("-No existe ningun dato para almacenar-\n");
+                                break;
+                            };
+                            default:{
+                                break;
+                            };
                         }
-                        else printf("-No existe ningun dato para almacenar-\n");
                         break;
                     };
                     default:{
@@ -418,7 +370,7 @@ int insertar_actual(struct elemento_pagina **inicio, struct elemento_pagina *pEP
     if(((*inicio)->paciente->id > pEPagina->paciente->id)){
         printf("%i en raiz es mayor que %i a insertar\n",(*inicio)->paciente->id, pEPagina->paciente->id);
         if((*inicio)->paciente->izquierda && pEPagina->paciente->izquierda ){
-            pEPagina->paciente->derecha=(*inicio)->paciente->izquierda;
+            (*inicio)->paciente->izquierda=pEPagina->paciente->derecha;
         }
         pEPagina->siguiente=*inicio;
         *inicio=pEPagina;
@@ -503,23 +455,39 @@ void arbol_hijos(struct pagina *listado, int contador, int hoja){
     return;
 }
 
-int guarda_arbol(struct elemento_pagina *arbol){
+int guarda_arbol(struct elemento_pagina *arbol, char *nombre_archivo){
+    strcat(nombre_archivo, ".zule");
     FILE *archivo;
     
-    archivo=fopen("bd_hospital.zule", "ab");
-    remove("bd_hospital.zule"); //Borramos archivo para evitar duplicidad de datos
-    archivo=fopen("bd_hospital.zule", "ab"); //Y lo volvemos a abrir
-
+    archivo=fopen(nombre_archivo, "rb"); //Primero comprobar que exista
     if(!archivo){
-        printf("No se pudo crear el archivo\n\n");
         fclose(archivo);
         return -1;
     }
+    remove(nombre_archivo); //Borramos archivo para evitar duplicidad de datos
+    archivo=fopen(nombre_archivo, "ab"); //Y lo volvemos a abrir
 
     escribe_datos(archivo, arbol);
 
     fclose(archivo);
     return 0;
+}
+
+int crea_nuevo_archivo(struct elemento_pagina *arbol, char *nombre_archivo){
+    strcat(nombre_archivo, ".zule");
+    FILE *archivo;
+    
+    archivo=fopen(nombre_archivo, "rb");
+    if(!archivo){ //Si no existe el archivo, entonces es posible crearlo
+        archivo=fopen(nombre_archivo, "ab"); //Y lo volvemos a abrir
+        if(!archivo) return -1; //Comprobacion que de plano no se pudo crear por otros motivos y ahora si toca salir
+        escribe_datos(archivo, arbol);
+        fclose(archivo);
+        return 0;
+    }
+    else return -1; //Significa que ya existe, por lo que esta operacion no se puede realizar
+    
+    
 }
 
 void escribe_datos(FILE *archivo, struct elemento_pagina *arbol){
@@ -599,7 +567,7 @@ int buscar_dato(struct elemento_pagina *arbol, int id_pac){
                 if(id_pac>arbol->paciente->id && arbol->siguiente) return buscar_dato(arbol->siguiente, id_pac);
                 else{ //Si no, entonces bajamos a la derecha siempre y cuando exista, sino, significa que ya estamos en las hojas y por ende la busqueda termina
                     if(arbol->paciente->derecha){
-                        //printf("\nEs momento de bajar a la derecha\n\n");
+                        printf("\nEs momento de bajar a la derecha, accediendo a %i\n", arbol->paciente->id);
                         printf("\n");
                         return buscar_dato(arbol->paciente->derecha->inicio, id_pac);
                     }
@@ -613,7 +581,7 @@ int buscar_dato(struct elemento_pagina *arbol, int id_pac){
                 //printf("Comparando...\n%i - %i\n", id_pac, arbol->paciente->id);
                 printf("-> %i ", arbol->paciente->id);
                 if(arbol->paciente->izquierda){ //Si es posible seguir bajando lo haremos, sino, entonces ya estamos en las hojas y la busqueda termina
-                    //printf("\nEs momento de bajar a la izquierda\n\n");
+                    printf("\nEs momento de bajar a la izquierda, accediendo a %i\n", arbol->paciente->id);
                     printf("\n");
                     return buscar_dato(arbol->paciente->izquierda->inicio, id_pac);
                 }
@@ -649,10 +617,11 @@ int busqueda_invisible(struct elemento_pagina *arbol, int id_pac){
 }
 
 
-int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar){
+int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar, char *nombre_archivo){
     FILE *archivo;
-    
-    archivo=fopen("bd_hospital.zule", "rb");
+    strcat(nombre_archivo,".zule");
+
+    archivo=fopen(nombre_archivo, "rb");
 
     if(!archivo) return -1;
 
@@ -660,8 +629,18 @@ int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar){
 
     while(!feof(archivo)){
         while(fread(&pNuevo, sizeof(struct datos), 1, archivo)){
-			inserta_nodo(&*raiz, pNuevo.id, pNuevo.nombre, pNuevo.segundo_nombre, pNuevo.apellido_paterno, pNuevo.apellido_materno, pNuevo.edad, pNuevo.peso, pAuxiliar);
-            *pAuxiliar=NULL;
+			if(*raiz){ //Si no existe la raiz (o en general que exista algun dato)
+                //Comprobamos a traves de la busqueda invisible si ya esta registrado el paciente o no
+                if(busqueda_invisible((*raiz)->inicio, pNuevo.id)==0) fread(&pNuevo, sizeof(struct datos), 1, archivo);
+                else{
+                    inserta_nodo(&*raiz, pNuevo.id, pNuevo.nombre, pNuevo.segundo_nombre, pNuevo.apellido_paterno, pNuevo.apellido_materno, pNuevo.edad, pNuevo.peso, pAuxiliar);
+                    *pAuxiliar=NULL;
+                }
+            }
+            else{
+                inserta_nodo(&*raiz, pNuevo.id, pNuevo.nombre, pNuevo.segundo_nombre, pNuevo.apellido_paterno, pNuevo.apellido_materno, pNuevo.edad, pNuevo.peso, pAuxiliar);
+                *pAuxiliar=NULL;
+            }
 		}
     }
     fclose(archivo);
