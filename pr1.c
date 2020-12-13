@@ -70,6 +70,8 @@ int buscar_dato(struct elemento_pagina *arbol, int id_pac);
 int busqueda_invisible(struct elemento_pagina *arbol, int id_pac); //Esta funcion es para comprobar que el ID a insertar no esta registrado previamente
 
 //Eliminacion
+int elimina_nodo(struct elemento_pagina **arbol, int id_pac, int elementos);
+int eliminacion(struct pagina **raiz, int id_pac);
 
 void creditos();
 
@@ -77,7 +79,7 @@ int main(int argc, char const *argv[])
 {
     struct pagina *raiz=NULL;
     raiz->inicio==NULL;
-    struct elemento_pagina *res= NULL;
+    struct elemento_pagina *res= NULL, *anterior=NULL, *superior=NULL;;
     int opcion, id_pac, edad_pac, contador, op_arch;
     char nombre_pac[30], nombre2_pac[30], ap_pac[30], am_pac[30], archivo[30];
     float peso_pac;
@@ -90,7 +92,7 @@ int main(int argc, char const *argv[])
         switch(opcion){
             case 1:{
                 printf("R E G I S T R O   D E   P A C I E N T E S\n\n");
-                printf("Ingresa los siguientes datos del paciente a registrar\n");
+                /*printf("Ingresa los siguientes datos del paciente a registrar\n");
                 printf("ID: ");
                 scanf("%i", &id_pac);
                 if(raiz){
@@ -112,12 +114,67 @@ int main(int argc, char const *argv[])
                 printf("Peso: ");
                 scanf("%f", &peso_pac);
                 inserta_nodo(&raiz, id_pac, nombre_pac, nombre2_pac, ap_pac, am_pac, edad_pac, peso_pac, &res);
-                res=NULL;
+                res=NULL;*/
+                inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,5,"Susana","","Sanchez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,7,"Margarita","","Ruiz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,3,"Pedro","","Loyo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,1,"Juan","","Ocampo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,4,"Lucia","","Perez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,12,"Esteban","","Hernandez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,11,"Maria","","Lopez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,8,"Edith","","Ortiz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,9,"Angel","","Mercado","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,10,"Salma","","Romero","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,2,"Perla","","Portugal","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,14,"Marcos","","Cruz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,13,"Jose","","Rodriguez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,15,"Adriana","","Alvarez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,16,"Lucia","","Perez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,19,"Petra","","Estevez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,18,"Juana","","Zarate","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,17,"Esperanza","","Lucas","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,20,"Lena","","Aragon","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,22,"Jaime","","Torres","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,21,"Sofia","","Martinez","Palacios",20,33.55,&res);
+                res = NULL;
                 printf("Pacientes registrados correctamente!\n\n");
                 break;
             };
             case 2:{
                 printf("E L I M I N A C I O N   D E   P A C I E N T E \n\n");
+                if(raiz && raiz->inicio){
+                    printf("Ingresa el ID del paciente a eliminar\n");
+                    printf("ID: ");
+                    scanf("%i", &id_pac);
+                    //if(elimina_nodo(&(raiz->inicio), id_pac)==0){
+                    if(eliminacion(&raiz, id_pac)==0){
+                        printf("Paciente eliminado con exito\n\n");
+                    }
+                    else printf("No se pudo eliminar al paciente, es\nposible que no se encuentre registrado\n\n");
+                }
+                else printf("-No existen pacientes registrados-\n");
                 break;
             };
             case 3:{
@@ -153,9 +210,9 @@ int main(int argc, char const *argv[])
             };
             case 5:{
                 printf("C A R G A R   A R C H I V O   D E   P A C I E N T E S\n\n");
-                printf("Ingresa el nombre del archivo que deseas cargar (sin extension): ");
+                printf("Ingresa el nombre del archivo que\ndeseas cargar (sin extension): ");
                 scanf("%s", archivo);
-                printf("\nEstas seguro? Los pacientes que no esten en el arbol actual\nse cargaran automaticamente\n\t[1]: Si\n\t[Cualquier otro numero]: No\n\n\tOpcion: ");
+                printf("\nEstas seguro? Los pacientes que no esten\nen el arbol actual se cargaran automaticamente\n\t[1]: Si\n\t[Cualquier otro numero]: No\n\n\tOpcion: ");
                 scanf("%i", &op_arch);
                 switch(op_arch){
                     case 1:{
@@ -164,6 +221,7 @@ int main(int argc, char const *argv[])
                         break;
                     };
                     default:{
+                        printf("Regresando al menu...\n\n");
                         break;
                     };
                 }
@@ -176,19 +234,19 @@ int main(int argc, char const *argv[])
                 scanf("%i", &op_arch);
                 switch (op_arch){
                     case 1:{
-                        printf("Ingresa el nombre del archivo que deseas crear (sin extension): ");
+                        printf("Ingresa el nombre del archivo que\ndeseas crear (sin extension): ");
                         scanf("%s", archivo);
                         if(raiz && raiz->inicio){
                             if(crea_nuevo_archivo(raiz->inicio,archivo)==0) printf("\nDatos guardados satisfactoriamente\n\n");
-                            else printf("\nNo fue posible guardar la informacion, el archivo ya existe o no se pudo crear\n\n");
+                            else printf("\nNo fue posible guardar la informacion,\nel archivo ya existe o no se pudo crear\n\n");
                         }
                         else printf("-No existe ningun dato para almacenar-\n");
                         break;
                     };
                     case 2:{
-                        printf("Ingresa el nombre del archivo que deseas sobreescribir (sin extension): ");
+                        printf("Ingresa el nombre del archivo que\ndeseas sobreescribir (sin extension): ");
                         scanf("%s", archivo);
-                        printf("\nEstas seguro? Se sobreescribira por completo el archivo seleccionado\n\t[1]: Si\n\t[Cualquier otro numero]: Cancelar\n\n\tOpcion: ");
+                        printf("\nEstas seguro? Se sobreescribira por completo\nel archivo seleccionado\n\t[1]: Si\n\t[Cualquier otro numero]: Cancelar\n\n\tOpcion: ");
                         scanf("%i", &op_arch);
                         switch(op_arch){
                             case 1:{
@@ -616,7 +674,6 @@ int busqueda_invisible(struct elemento_pagina *arbol, int id_pac){
     else return -1;
 }
 
-
 int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar, char *nombre_archivo){
     FILE *archivo;
     strcat(nombre_archivo,".zule");
@@ -645,4 +702,71 @@ int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar, char *
     }
     fclose(archivo);
     return 0;
+}
+
+int elimina_nodo(struct elemento_pagina **arbol, int id_pac, int elementos){
+    if(*arbol){
+        //Si se encuentra el dato procedemos a eliminarlo, para ello aplicamos la busqueda
+        //¿Por que no usar la funcion busqueda? Porque aqui tenemos un doble apuntador y si la implementamos
+        //este no se mueve, por ello, creamos nuestra propia funcion de busqueda
+        if(id_pac==(*arbol)->paciente->id && strcmp((*arbol)->paciente->nombre,"")!=0){
+            elementos=elementos+1;
+            printf("Eliminando %i, %s\n\n", (*arbol)->paciente->id, (*arbol)->paciente->nombre);
+            struct elemento_pagina *pActual=(*arbol);
+            *arbol=(*arbol)->siguiente;
+            free(pActual);
+            
+            elementos=elementos-1;
+            elementos=elementos+contador_elementos(*arbol);
+           
+            printf("%i elementos restantes en la lista\n", elementos);
+
+            if(elementos<((2*d)/2)){
+                printf("Es hora de fusionar...\n");
+            }
+
+            /*
+            PASO 1 Busque la hoja L que contiene la entrada (tecla, puntero) para eliminar
+            PASO 2 Elimine la entrada de L
+                PASO 2a Si L cumple con el criterio de "medio lleno", entonces hemos terminado.
+                PASO 2b De lo contrario, L tiene muy pocas entradas de datos.
+
+            PASO 3 Si el hermano derecho de L puede prescindir de una entrada, mueva la entrada más pequeña del hermano derecho a L
+                PASO 3a De lo contrario, si el hermano izquierdo de L puede ahorrar
+                        una entrada, mueva la entrada más grande del hermano izquierdo a L
+                PASO 3b De lo contrario, fusiona L y un hermano
+
+            PASO 4 Si se fusiona, borra de forma recursiva la entrada (apuntando a L o hermano) del padre.
+            PASO 5 La combinación podría propagarse a la raíz, disminuyendo la altura
+            */
+            return 0;
+        }
+        else{
+            if(id_pac>=(*arbol)->paciente->id){ 
+                if(id_pac>(*arbol)->paciente->id && (*arbol)->siguiente) return elimina_nodo(&(*arbol)->siguiente, id_pac, elementos=elementos+1);
+                else{
+                    if((*arbol)->paciente->derecha) return elimina_nodo(&(*arbol)->paciente->derecha->inicio, id_pac, 0);
+                    else return -1;
+                }
+            }
+            else{
+                if((*arbol)->paciente->izquierda) return elimina_nodo(&(*arbol)->paciente->izquierda->inicio, id_pac, 0);
+                else return -1;   
+            }
+        }
+    }
+    else return -1;
+}
+
+int eliminacion(struct pagina **raiz, int id_pac){
+    int elementos=0;
+    if(*raiz){
+        elimina_nodo(&(*raiz)->inicio, id_pac, elementos);
+        return 0;
+    }
+    else return -1;
+}
+
+int fusion(struct pagina *paginas){
+
 }
