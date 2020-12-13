@@ -70,8 +70,11 @@ int buscar_dato(struct elemento_pagina *arbol, int id_pac);
 int busqueda_invisible(struct elemento_pagina *arbol, int id_pac); //Esta funcion es para comprobar que el ID a insertar no esta registrado previamente
 
 //Eliminacion
-int elimina_nodo(struct elemento_pagina **arbol, int id_pac, int elementos);
-int eliminacion(struct pagina **raiz, int id_pac);
+int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac, int elementos);
+int fusion(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac);
+struct elemento_pagina **obtener_padre(struct elemento_pagina **arbol, int id_pac);
+struct elemento_pagina **obtener_hermano(struct elemento_pagina **arbol, int id_pac);
+struct elemento_pagina **recorrer_hasta_final(struct elemento_pagina **arbol);
 
 void creditos();
 
@@ -168,8 +171,7 @@ int main(int argc, char const *argv[])
                     printf("Ingresa el ID del paciente a eliminar\n");
                     printf("ID: ");
                     scanf("%i", &id_pac);
-                    //if(elimina_nodo(&(raiz->inicio), id_pac)==0){
-                    if(eliminacion(&raiz, id_pac)==0){
+                    if(elimina_nodo(&(raiz->inicio), &(raiz->inicio), id_pac, contador)==0){
                         printf("Paciente eliminado con exito\n\n");
                     }
                     else printf("No se pudo eliminar al paciente, es\nposible que no se encuentre registrado\n\n");
@@ -704,7 +706,7 @@ int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar, char *
     return 0;
 }
 
-int elimina_nodo(struct elemento_pagina **arbol, int id_pac, int elementos){
+int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac, int elementos){
     if(*arbol){
         //Si se encuentra el dato procedemos a eliminarlo, para ello aplicamos la busqueda
         //¿Por que no usar la funcion busqueda? Porque aqui tenemos un doble apuntador y si la implementamos
@@ -722,7 +724,10 @@ int elimina_nodo(struct elemento_pagina **arbol, int id_pac, int elementos){
             printf("%i elementos restantes en la lista\n", elementos);
 
             if(elementos<((2*d)/2)){
-                printf("Es hora de fusionar...\n");
+                printf("Es hora de fusionar a %i...\n", (*arbol)->paciente->id);
+                //Tenemos que buscar al padre de (*arbol)->paciente->id
+                fusion(raiz,arbol, (*arbol)->paciente->id);
+
             }
 
             /*
@@ -743,14 +748,14 @@ int elimina_nodo(struct elemento_pagina **arbol, int id_pac, int elementos){
         }
         else{
             if(id_pac>=(*arbol)->paciente->id){ 
-                if(id_pac>(*arbol)->paciente->id && (*arbol)->siguiente) return elimina_nodo(&(*arbol)->siguiente, id_pac, elementos=elementos+1);
+                if(id_pac>(*arbol)->paciente->id && (*arbol)->siguiente) return elimina_nodo(raiz, &(*arbol)->siguiente, id_pac, elementos=elementos+1);
                 else{
-                    if((*arbol)->paciente->derecha) return elimina_nodo(&(*arbol)->paciente->derecha->inicio, id_pac, 0);
+                    if((*arbol)->paciente->derecha) return elimina_nodo(raiz, &(*arbol)->paciente->derecha->inicio, id_pac, 0);
                     else return -1;
                 }
             }
             else{
-                if((*arbol)->paciente->izquierda) return elimina_nodo(&(*arbol)->paciente->izquierda->inicio, id_pac, 0);
+                if((*arbol)->paciente->izquierda) return elimina_nodo(raiz, &(*arbol)->paciente->izquierda->inicio, id_pac, 0);
                 else return -1;   
             }
         }
@@ -758,15 +763,66 @@ int elimina_nodo(struct elemento_pagina **arbol, int id_pac, int elementos){
     else return -1;
 }
 
-int eliminacion(struct pagina **raiz, int id_pac){
-    int elementos=0;
-    if(*raiz){
-        elimina_nodo(&(*raiz)->inicio, id_pac, elementos);
-        return 0;
+int fusion(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac){
+    if(*arbol){
+        //CASO 1: El nodo puede incorporarse a la siguiente pagina
+        struct elemento_pagina **padre=obtener_padre(raiz, id_pac);
+        struct elemento_pagina **hermano=obtener_hermano(raiz, (*padre)->paciente->id);
+
+        if (!*padre || !*hermano) return -1;
+        if(*padre==*hermano) *hermano=NULL; //Si el padre y hermano son la misma persona significa que solo hay un nodo padre
+        if((*arbol)->paciente->id<(*padre)->paciente->id){ //Si el elemento es menor al padre entonces se va a la derecha junto con los que estaban en el nodo anterior
+            struct elemento_pagina **pActual=recorrer_hasta_final(&(*hermano)->paciente->izquierda->inicio);
+            
+            printf("Fusionando a %i con los hijos izquierdos de %i...\n", (*arbol)->paciente->id, (*hermano)->paciente->id);
+            (*pActual)->siguiente=(*arbol);
+            (*padre)->paciente->izquierda=(*hermano)->paciente->izquierda;
+            printf("El nuevo padre es %i...\n", (*padre)->paciente->id);
+
+        }
+        
+        //printf("nodo a mover: %i %s\npadre: %i %s\ntio: %i %s", (*arbol)->paciente->id, (*arbol)->paciente->nombre, (*padre)->paciente->id, (*padre)->paciente->nombre, (*hermano)->paciente->id, (*hermano)->paciente->nombre);
     }
     else return -1;
 }
 
-int fusion(struct elemento_pagina *paginas){
-
+struct elemento_pagina **obtener_padre(struct elemento_pagina **arbol, int id_pac){
+    if(*arbol){
+        if(id_pac>=(*arbol)->paciente->id){ 
+            if(id_pac>(*arbol)->paciente->id && (*arbol)->siguiente) return obtener_padre(&(*arbol)->siguiente, id_pac);
+            else{ //Comprobamos que tenga un derecha y que siga siendo clave pues tenemos que evitar llegar a los hijos
+                if((*arbol)->paciente->derecha && strcmp((*arbol)->paciente->derecha->inicio->paciente->nombre, "")==0) return obtener_padre(&(*arbol)->paciente->derecha->inicio, id_pac);
+                else return arbol;
+            }
+        }
+        else{
+            if((*arbol)->paciente->izquierda && strcmp((*arbol)->paciente->izquierda->inicio->paciente->nombre, "")==0) return obtener_padre(&(*arbol)->paciente->izquierda->inicio, id_pac);
+            else return arbol;   
+        }
+    }
+    else return NULL;
 }
+
+struct elemento_pagina **obtener_hermano(struct elemento_pagina **arbol, int id_pac){
+    if(*arbol){
+        if(id_pac==(*arbol)->paciente->id) return arbol;
+        if((*arbol)->siguiente){
+            if(id_pac!=(*arbol)->siguiente->paciente->id) return obtener_hermano(&(*arbol)->siguiente, id_pac);
+            if(id_pac==(*arbol)->siguiente->paciente->id) return arbol;
+        }
+        else{
+            if(id_pac>(*arbol)->paciente->id && strcmp((*arbol)->paciente->derecha->inicio->paciente->nombre, "")==0){
+                return obtener_hermano(&(*arbol)->paciente->derecha->inicio, id_pac);
+            }
+            if(id_pac<(*arbol)->paciente->id && strcmp((*arbol)->paciente->izquierda->inicio->paciente->nombre, "")==0){
+                return obtener_hermano(&(*arbol)->paciente->izquierda->inicio, id_pac);
+            }
+        }
+    }
+    else return NULL;
+}
+
+struct elemento_pagina **recorrer_hasta_final(struct elemento_pagina **arbol){
+    if((*arbol)->siguiente) return recorrer_hasta_final(&(*arbol)->siguiente);
+    return arbol;
+} 
