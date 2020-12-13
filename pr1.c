@@ -767,6 +767,6 @@ int eliminacion(struct pagina **raiz, int id_pac){
     else return -1;
 }
 
-int fusion(struct pagina *paginas){
+int fusion(struct elemento_pagina *paginas){
 
 }
