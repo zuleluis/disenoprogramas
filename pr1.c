@@ -70,7 +70,7 @@ int buscar_dato(struct elemento_pagina *arbol, int id_pac);
 int busqueda_invisible(struct elemento_pagina *arbol, int id_pac); //Esta funcion es para comprobar que el ID a insertar no esta registrado previamente
 
 //Eliminacion
-int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac, int elementos);
+int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, struct elemento_pagina **pAnterior, int id_pac, int elementos);
 int fusion(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac);
 struct elemento_pagina **obtener_padre(struct elemento_pagina **arbol, int id_pac);
 struct elemento_pagina **obtener_hermano(struct elemento_pagina **arbol, int id_pac);
@@ -82,7 +82,7 @@ int main(int argc, char const *argv[])
 {
     struct pagina *raiz=NULL;
     raiz->inicio==NULL;
-    struct elemento_pagina *res= NULL, *anterior=NULL, *superior=NULL;;
+    struct elemento_pagina *res= NULL, *anterior=NULL;
     int opcion, id_pac, edad_pac, contador, op_arch;
     char nombre_pac[30], nombre2_pac[30], ap_pac[30], am_pac[30], archivo[30];
     float peso_pac;
@@ -94,8 +94,8 @@ int main(int argc, char const *argv[])
         scanf("%i", &opcion);
         switch(opcion){
             case 1:{
-                printf("R E G I S T R O   D E   P A C I E N T E S\n\n");
-                /*printf("Ingresa los siguientes datos del paciente a registrar\n");
+                /*printf("R E G I S T R O   D E   P A C I E N T E S\n\n");
+                printf("Ingresa los siguientes datos del paciente a registrar\n");
                 printf("ID: ");
                 scanf("%i", &id_pac);
                 if(raiz){
@@ -118,6 +118,41 @@ int main(int argc, char const *argv[])
                 scanf("%f", &peso_pac);
                 inserta_nodo(&raiz, id_pac, nombre_pac, nombre2_pac, ap_pac, am_pac, edad_pac, peso_pac, &res);
                 res=NULL;*/
+
+                /*inserta_nodo(&raiz,1,"Andres","","Mendez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,2,"Susana","","Sanchez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,3,"Margarita","","Ruiz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,4,"Pedro","","Loyo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,5,"Juan","","Ocampo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,6,"Lucia","","Perez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,7,"Esteban","","Hernandez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,8,"Maria","","Lopez","Palacios",20,33.55,&res);
+                res = NULL;*/
+
+                /*inserta_nodo(&raiz,3,"Andres","","Mendez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,4,"Susana","","Sanchez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,5,"Margarita","","Ruiz","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,6,"Pedro","","Loyo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,7,"Juan","","Ocampo","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,8,"Lucia","","Perez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,1,"Esteban","","Hernandez","Palacios",20,33.55,&res);
+                res = NULL;
+                inserta_nodo(&raiz,2,"Maria","","Lopez","Palacios",20,33.55,&res);
+                res = NULL;*/
+
                 inserta_nodo(&raiz,6,"Andres","","Mendez","Palacios",20,33.55,&res);
                 res = NULL;
                 inserta_nodo(&raiz,5,"Susana","","Sanchez","Palacios",20,33.55,&res);
@@ -171,7 +206,7 @@ int main(int argc, char const *argv[])
                     printf("Ingresa el ID del paciente a eliminar\n");
                     printf("ID: ");
                     scanf("%i", &id_pac);
-                    if(elimina_nodo(&(raiz->inicio), &(raiz->inicio), id_pac, contador)==0){
+                    if(elimina_nodo(&(raiz->inicio), &(raiz->inicio), &anterior, id_pac, contador)==0){
                         printf("Paciente eliminado con exito\n\n");
                     }
                     else printf("No se pudo eliminar al paciente, es\nposible que no se encuentre registrado\n\n");
@@ -493,9 +528,9 @@ void creditos(){
 
 void mostrar_arbol(struct elemento_pagina *elemento, int contador){
     if(elemento){
-        for(int i=0; i<contador; i++) printf("   ");
-        if(strcmp(elemento->paciente->nombre, "")==0) printf("|__ Clave: %i\n", elemento->paciente->id);
-        else printf("|--%i. %s %s\n", elemento->paciente->id, elemento->paciente->nombre, elemento->paciente->apellido_paterno);
+        for(int i=0; i<contador; i++) printf("|   ");
+        if(strcmp(elemento->paciente->nombre, "")==0) printf("|___ Clave: %i\n", elemento->paciente->id);
+        else printf("|---%i. %s %s\n", elemento->paciente->id, elemento->paciente->nombre, elemento->paciente->apellido_paterno);
 
         arbol_hijos(elemento->paciente->izquierda, contador+1, 1);
         arbol_hijos(elemento->paciente->derecha, contador+1, 2);
@@ -506,11 +541,9 @@ void mostrar_arbol(struct elemento_pagina *elemento, int contador){
 
 void arbol_hijos(struct pagina *listado, int contador, int hoja){
     if(listado){
-        for(int i=0; i<contador; i++) printf("   ");
-        printf("|-*HOJA %i*-\n", hoja);
+        for(int i=0; i<contador; i++) printf("|   ");
+        printf("|*HOJA %i*\n", hoja);
         mostrar_arbol(listado->inicio, contador);
-        for(int i=0; i<contador; i++) printf("   ");
-        printf("|\n");
     }
     return;
 }
@@ -573,7 +606,7 @@ void escribe_datos(FILE *archivo, struct elemento_pagina *arbol){
                     pNuevo.edad=arbol->paciente->edad;
                     pNuevo.peso=arbol->paciente->peso;
                     fwrite(&pNuevo, sizeof(struct datos), 1, archivo);
-                    //printf("|- %i %s %s\n", arbol->paciente->id, arbol->paciente->nombre, arbol->paciente->apellido_paterno);
+        
                 }
                 acceso_recursivo_arbol(archivo, arbol->paciente->izquierda);
                 escribe_datos(archivo, arbol->siguiente);
@@ -590,7 +623,6 @@ void escribe_datos(FILE *archivo, struct elemento_pagina *arbol){
                 pNuevo.edad=arbol->paciente->edad;
                 pNuevo.peso=arbol->paciente->peso;
                 fwrite(&pNuevo, sizeof(struct datos), 1, archivo);
-                //printf("|- %i %s %s\n", arbol->paciente->id, arbol->paciente->nombre, arbol->paciente->apellido_paterno);
             }
             acceso_recursivo_arbol(archivo, arbol->paciente->izquierda);
             escribe_datos(archivo, arbol->siguiente);
@@ -706,7 +738,7 @@ int lee_archivo(struct pagina **raiz, struct elemento_pagina **pAuxiliar, char *
     return 0;
 }
 
-int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac, int elementos){
+int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, struct elemento_pagina **pAnterior, int id_pac, int elementos){
     if(*arbol){
         //Si se encuentra el dato procedemos a eliminarlo, para ello aplicamos la busqueda
         //¿Por que no usar la funcion busqueda? Porque aqui tenemos un doble apuntador y si la implementamos
@@ -724,38 +756,29 @@ int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, 
             printf("%i elementos restantes en la lista\n", elementos);
 
             if(elementos<((2*d)/2)){
-                printf("Es hora de fusionar a %i...\n", (*arbol)->paciente->id);
-                //Tenemos que buscar al padre de (*arbol)->paciente->id
-                fusion(raiz,arbol, (*arbol)->paciente->id);
-
+                if(!*arbol){ //Si era el ultimo elemento de la pagina actual...
+                    arbol=pAnterior;
+                    printf("Es hora de fusionar a %i...\n", (*arbol)->paciente->id);
+                    fusion(raiz,arbol, (*arbol)->paciente->id);
+                }
+                else{
+                    printf("Es hora de fusionar a %i...\n", (*arbol)->paciente->id);
+                    //Tenemos que buscar al padre de (*arbol)->paciente->id
+                    fusion(raiz,arbol, (*arbol)->paciente->id);
+                }
             }
-
-            /*
-            PASO 1 Busque la hoja L que contiene la entrada (tecla, puntero) para eliminar
-            PASO 2 Elimine la entrada de L
-                PASO 2a Si L cumple con el criterio de "medio lleno", entonces hemos terminado.
-                PASO 2b De lo contrario, L tiene muy pocas entradas de datos.
-
-            PASO 3 Si el hermano derecho de L puede prescindir de una entrada, mueva la entrada más pequeña del hermano derecho a L
-                PASO 3a De lo contrario, si el hermano izquierdo de L puede ahorrar
-                        una entrada, mueva la entrada más grande del hermano izquierdo a L
-                PASO 3b De lo contrario, fusiona L y un hermano
-
-            PASO 4 Si se fusiona, borra de forma recursiva la entrada (apuntando a L o hermano) del padre.
-            PASO 5 La combinación podría propagarse a la raíz, disminuyendo la altura
-            */
             return 0;
         }
         else{
             if(id_pac>=(*arbol)->paciente->id){ 
-                if(id_pac>(*arbol)->paciente->id && (*arbol)->siguiente) return elimina_nodo(raiz, &(*arbol)->siguiente, id_pac, elementos=elementos+1);
+                if(id_pac>(*arbol)->paciente->id && (*arbol)->siguiente) return elimina_nodo(raiz, &(*arbol)->siguiente, arbol, id_pac, elementos=elementos+1);
                 else{
-                    if((*arbol)->paciente->derecha) return elimina_nodo(raiz, &(*arbol)->paciente->derecha->inicio, id_pac, 0);
+                    if((*arbol)->paciente->derecha) return elimina_nodo(raiz, &(*arbol)->paciente->derecha->inicio, NULL, id_pac, 0);
                     else return -1;
                 }
             }
             else{
-                if((*arbol)->paciente->izquierda) return elimina_nodo(raiz, &(*arbol)->paciente->izquierda->inicio, id_pac, 0);
+                if((*arbol)->paciente->izquierda) return elimina_nodo(raiz, &(*arbol)->paciente->izquierda->inicio, NULL, id_pac, 0);
                 else return -1;   
             }
         }
@@ -765,23 +788,156 @@ int elimina_nodo(struct elemento_pagina **raiz, struct elemento_pagina **arbol, 
 
 int fusion(struct elemento_pagina **raiz, struct elemento_pagina **arbol, int id_pac){
     if(*arbol){
-        //CASO 1: El nodo puede incorporarse a la siguiente pagina
-        struct elemento_pagina **padre=obtener_padre(raiz, id_pac);
-        struct elemento_pagina **hermano=obtener_hermano(raiz, (*padre)->paciente->id);
+        int elementos;
+        struct elemento_pagina **padre=obtener_padre(&*raiz, id_pac);
+        struct elemento_pagina *hermano=crea_elemento_pagina();
+        hermano=*obtener_hermano(raiz, (*padre)->paciente->id);
 
-        if (!*padre || !*hermano) return -1;
-        if(*padre==*hermano) *hermano=NULL; //Si el padre y hermano son la misma persona significa que solo hay un nodo padre
+        if (!*padre || !hermano) return -1;
+        if(*padre==hermano){ //Checamos que el padre no sea el primer elemento de la lista
+            printf("Reasignar hermano al elemento siguiente del padre...\n");
+            hermano=(*padre)->siguiente; //Entonces el tio ahora sera el siguiente nodo del padre
+        }
+
         if((*arbol)->paciente->id<(*padre)->paciente->id){ //Si el elemento es menor al padre entonces se va a la derecha junto con los que estaban en el nodo anterior
-            struct elemento_pagina **pActual=recorrer_hasta_final(&(*hermano)->paciente->izquierda->inicio);
-            
-            printf("Fusionando a %i con los hijos izquierdos de %i...\n", (*arbol)->paciente->id, (*hermano)->paciente->id);
-            (*pActual)->siguiente=(*arbol);
-            (*padre)->paciente->izquierda=(*hermano)->paciente->izquierda;
-            printf("El nuevo padre es %i...\n", (*padre)->paciente->id);
+            if(!hermano){//Si no existe ningun hermano, entonces toca fusionar todo
+                printf("Fusionando %i a la rama derecha de %i...\n", (*arbol)->paciente->id, (*raiz)->paciente->id);
+                struct elemento_pagina *pNuevo=crea_elemento_pagina();
+                if(!pNuevo) return -1; 
+
+                pNuevo->paciente=(*arbol)->paciente;
+                pNuevo->siguiente=(*raiz)->paciente->derecha->inicio;
+                printf("Eliminando %i...\n", (*raiz)->paciente->id);
+                (*raiz)=pNuevo;
+
+                elementos=contador_elementos(*padre);
+
+                if(elementos>2*d){ //Si la pagina a la que se unio ahora tiene más de 2d elementos...
+                    struct elemento_pagina **centro=obtener_centro(&*padre, 0);
+                    struct elemento_pagina *pClave=crea_elemento_pagina();
+                    
+                    pClave->paciente=NULL;
+                    pClave->paciente=crea_nodo((*centro)->paciente->id, "", "", "", "", 0, 0);
+                    pClave->siguiente=NULL;
+
+                    if(!pClave) return -1;
+
+                    struct pagina *izquierda=crea_pagina();
+                    struct pagina *derecha=crea_pagina();
+                    if (!(izquierda || derecha)) return -1;
+
+                    pClave->paciente->izquierda=izquierda;
+                    pClave->paciente->derecha=derecha;
+
+                    izquierda->inicio=(*padre);                    
+                    derecha->inicio=(*centro);
+                                        
+                    (*padre)=pClave;
+                    (*padre)->siguiente=NULL;
+                    (*centro)=NULL;
+                }
+                return 0;
+            }
+            else{ //Pero si efectivamente existen hermanos...
+                struct elemento_pagina **pActual=recorrer_hasta_final(&hermano->paciente->izquierda->inicio);
+                struct elemento_pagina *pNuevo=crea_elemento_pagina();
+                    
+                printf("Fusionando a %i con los hijos izquierdos de %i...\n", (*arbol)->paciente->id, hermano->paciente->id);
+                if((*arbol)->paciente->id>(*pActual)->paciente->id){ //Si el que quedo solito es mayor que el ultimo del hermano anterior
+                    (*pActual)->siguiente=(*arbol); //Agregamos el nodo que queda solo a la pagina actual
+                    pNuevo=hermano->paciente->izquierda->inicio; //Le asignamos a pNuevo toda la izquierda
+                    (*padre)->paciente->izquierda->inicio=pNuevo;//Ahora, la izquierda del padre sera pNuevo
+                    printf("El nuevo padre es %i...\n", (*padre)->paciente->id);
+                }
+                else{
+                    (*padre)=(*padre)->siguiente; //El padre debe de ser el siguiente elemento ya que el dato que se elimino estaba a la izquierda del nodo
+                    printf("El nuevo padre es %i...\n", (*padre)->paciente->id);
+                    (*arbol)->siguiente=hermano->paciente->izquierda->inicio; //Ahora el que quedo solito va a fusionarse con los hijos del siguiente
+                    pNuevo=(*arbol);
+                    (*padre)->paciente->izquierda->inicio=pNuevo;
+                    return 0;
+                }
+
+                //Toca liberar memoria para eliminar el nodo que quedo
+                if(*obtener_hermano(&hermano, hermano->paciente->id)==hermano){ //Si el hermano a eliminar era el primero en la lista de claves
+                    printf("Yo %i no tengo hermanos atras de mi\n", hermano->paciente->id);
+                    struct elemento_pagina *liberar=(*raiz);
+                    (*raiz)=*padre;
+                    free(liberar);
+                }
+                return 0;
+            }
 
         }
-        
-        //printf("nodo a mover: %i %s\npadre: %i %s\ntio: %i %s", (*arbol)->paciente->id, (*arbol)->paciente->nombre, (*padre)->paciente->id, (*padre)->paciente->nombre, (*hermano)->paciente->id, (*hermano)->paciente->nombre);
+        else{
+            //printf("Clave a fusionar: %i\nPadre: %i\nHermano: %i\n", (*arbol)->paciente->id, (*padre)->paciente->id, hermano->paciente->id);
+            if(!hermano){//Si no existe ningun hermano, entonces toca fusionar todo
+                printf("Fusionando %i a la rama izquierda de %i...\n", (*arbol)->paciente->id, (*padre)->paciente->id);
+                hermano=*padre;
+                struct elemento_pagina **pActual=recorrer_hasta_final(&hermano->paciente->izquierda->inicio);
+                struct elemento_pagina *pNuevo=crea_elemento_pagina();  
+
+                if(!pNuevo) return -1;
+
+                (*pActual)->siguiente=(*arbol);
+                pNuevo=hermano->paciente->izquierda->inicio;
+                (*padre)->paciente->izquierda->inicio=pNuevo;
+                *raiz=(*padre)->paciente->izquierda->inicio;
+
+                elementos=contador_elementos(*raiz);
+
+                if(elementos>2*d){ //Si la pagina a la que se unio ahora tiene más de 2d elementos...
+                    printf("Pagina con mas de 2d elementos");
+                    struct elemento_pagina **centro=obtener_centro(&*raiz, 0);
+                    struct elemento_pagina *pClave=crea_elemento_pagina();
+                    
+                    pClave->paciente=NULL;
+                    pClave->paciente=crea_nodo((*centro)->paciente->id, "", "", "", "", 0, 0);
+                    pClave->siguiente=NULL;
+
+                    if(!pClave) return -1;
+
+                    struct pagina *izquierda=crea_pagina();
+                    struct pagina *derecha=crea_pagina();
+                    if (!(izquierda || derecha)) return -1;
+
+                    pClave->paciente->izquierda=izquierda;
+                    pClave->paciente->derecha=derecha;
+
+                    izquierda->inicio=(*raiz);                    
+                    derecha->inicio=(*centro);
+                                        
+                    (*raiz)=pClave;
+                    (*raiz)->siguiente=NULL;
+                    (*centro)=NULL;
+                }
+                return 0;
+            }
+            else{
+                printf("Si tiene hermano");
+                //struct elemento_pagina *liberar=*padre;
+                //hermano=*padre;
+                //(*padre)=(*padre)->siguiente;
+                struct elemento_pagina *pAux=hermano;
+                hermano=*padre;
+                *padre=pAux;
+                struct elemento_pagina **pActual=recorrer_hasta_final(&hermano->paciente->izquierda->inicio);
+                struct elemento_pagina *pNuevo=crea_elemento_pagina();
+
+                printf("Fusionando %i a la rama derecha de %i...\n", (*arbol)->paciente->id, (*padre)->paciente->id);
+                if((*arbol)->paciente->id>(*pActual)->paciente->id){ //Si el que quedo solito es mayor que el ultimo del hermano anterior
+                    printf("Ultimo: %i", (*pActual)->paciente->id);
+                    (*pActual)->siguiente=(*arbol); //Agregamos el nodo que queda solo a la pagina actual
+                    pNuevo=hermano->paciente->izquierda->inicio; //Le asignamos a pNuevo toda la izquierda
+                    (*padre)->paciente->izquierda->inicio=pNuevo;//Ahora, la izquierda del padre sera pNuevo
+                    printf("El nuevo padre es %i...\n", (*padre)->paciente->id);
+                    *raiz=*padre;
+                    (*raiz)->siguiente=NULL;
+                    return 0;
+                }
+            }
+            return 0;
+        }
     }
     else return -1;
 }
