@@ -5,25 +5,6 @@ de carga de palabras).
 
 Las palabras se van conectando entre sí por la secuencia del texto y será interrumpida sólo por signos de puntuación (punto, comas,
 punto y coma, signos de admiración, etc). 
-
-Cada nodo almacena la palabra y su probabilidad de ocurrencia P(A) donde se determina como:
-P(A)= d/m
-Donde A es el nodo, d es el número de ocurrencias de la palabra contenida en A y m el número total de palabras que forman el texto.
-
-El peso de una arista que conecte dos nodos estará determinado por la fórmula bayesiana de eventos dependientes:
-
-           P(B|A)*P(A)
-P(A|B)=-------------------
-              P(B)
- 
-Donde b denota la palabra antecesora para p(B) diferente de 0, y
-         
-         P(BnA)
-P(B|A)= --------- si P(A) es diferente de 0
-          P(A)
-
-donde P(AnB) es la probabilidad conjunta de que ambas palabras se encuentren en la misma oración (para evitar una recursión infinita) y
-P(BnA)=P(AnB)
  
 Hacer un programa en C que de modo gráfico usando OpenGL:
     - Genere y muestre un grafo conectado y dirigido, basado en las palabras del archivo.
@@ -41,6 +22,8 @@ Hacer un programa en C que de modo gráfico usando OpenGL:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <stdbool.h>
 
 struct nodo{
     char palabra[30];
@@ -48,13 +31,13 @@ struct nodo{
     int y;
     float ocurrencia; //Guarda la probabilidad de ocurrencia P(A)=d/m
     int frecuencia; //Guarda la frecuencia con la que aparece cada palabra
-    int frecuencia_aristas; 
+    int frecuencia_aristas; //Guarda la cantidad de veces que aparece la palabra en una arista
     struct nodo *siguiente;
     struct arista *aristas;
 };
 
 struct arista{
-    int peso;
+    float peso;
     int frecuencia; //Cantidad de veces que se repite la misma arista
     struct nodo *vertice;
     struct arista *siguiente;
@@ -67,13 +50,20 @@ int inserta_arista(struct nodo *grafo, char *origen, char *destino);
 struct arista *busca_arista(struct arista *arista, char *destino);
 int imprime_lista(struct nodo *grafo);
 int imprime_aristas(struct arista *arista);
+int ordena_nodos(struct nodo *grafo);
+int ordena_aristas(struct arista **arista, bool *estado); //Funcion para ordenar aristas de la mas lejana a la mas cercana
+int frases_comunes(struct nodo *grafo, char *palabra);
 
 
-int lee_archivo(struct nodo **raiz, char *nombre_archivo);
+int lee_archivo(struct nodo **grafo, char *nombre_archivo);
 char evalua_caracter_especial(char letra);
-int guarda_grafo(struct nodo *raiz, char *nombre_archivo);
+int guarda_grafo(struct nodo *grafo, char *nombre_archivo);
+int escribe_datos(FILE *archivo, struct nodo *grafo);
+int escribe_aristas(FILE *archivo, struct arista *aristas);
 
 int prob_ocurrencia(struct nodo **grafo);
+int teorema_bayes(struct nodo *grafo);
+int bayes_aristas(struct nodo *anterior, struct arista **arista);
 
 int elementos=0; //Cantidad de elementos en el grafo
 
@@ -90,6 +80,8 @@ int main(int argc, char const *argv[])
     inserta_nodo(&raiz, "si");
     inserta_nodo(&raiz, "esto");
     inserta_nodo(&raiz, "funciona");
+    inserta_nodo(&raiz, "para");
+    inserta_nodo(&raiz, "mi");
 
     inserta_arista(raiz, "hola", "esto");
     inserta_arista(raiz, "esto", "es");
@@ -99,13 +91,25 @@ int main(int argc, char const *argv[])
     inserta_arista(raiz, "para", "ver");
     inserta_arista(raiz, "ver", "si");
     inserta_arista(raiz, "si", "esto");
-    inserta_arista(raiz, "esto", "funciona");*/
+    inserta_arista(raiz, "esto", "funciona");
+    inserta_arista(raiz, "funciona", "para");
+    inserta_arista(raiz, "para", "mi");*/
 
-    lee_archivo(&raiz, "xd");
+    lee_archivo(&raiz, "don_quijote.txt");
     prob_ocurrencia(&raiz);
+    teorema_bayes(raiz);
+    ordena_nodos(raiz);
     imprime_lista(raiz);
     printf("\n\nHay %i elementos\n", elementos);
-    //guarda_grafo(raiz, "ok");
+    frases_comunes(raiz, "la");
+
+    /*lee_archivo(&raiz, "otraprueba.txt");
+    prob_ocurrencia(&raiz);
+    teorema_bayes(raiz);
+    imprime_lista(raiz);
+    printf("\n\nHay %i elementos\n", elementos);*/
+
+    //guarda_grafo(raiz, "backup.txt");
 
     return 0;
 }
@@ -169,62 +173,63 @@ int inserta_arista(struct nodo *grafo, char *origen, char *destino){
 }
 
 int imprime_lista(struct nodo *grafo){
-    if(grafo){
-        printf("%s: %f, %i veces\n", grafo->palabra, grafo->ocurrencia, grafo->frecuencia);
-        imprime_lista(grafo->siguiente);
-    }
+    if(!grafo) return 0;
+    printf("\n\nVertice -> %s\n", grafo->palabra);
+    imprime_aristas(grafo->aristas);
+    imprime_lista(grafo->siguiente);
 }
 
-/*int imprime_aristas(struct arista *arista){
+int imprime_aristas(struct arista *arista){
     if(!arista) return 0;
-    im
-}*/
-
-/*
-void p_bayes(vertice *raiz){
-	if(!raiz)
-		return;
-	asignar_pesos_bayes(raiz,raiz->aristas);
-	p_bayes(raiz->siguiente);
+    printf("  %16s  %f - %i\n", arista->vertice->palabra, arista->peso, arista->frecuencia);
+    imprime_aristas(arista->siguiente);
 }
-
-void asignar_pesos_bayes(vertice *origen,arista *destino){
-	if(!destino)
-		return;
-	float b_inter_a=destino->frecuencia/origen->frecuencia_aristas;
-	destino->costo=b_inter_a/origen->ocurrencia;
-	asignar_pesos_bayes(origen,destino->siguiente);
-}
-*/
 
 int lee_archivo(struct nodo **grafo, char *nombre_archivo){
+    //strcat(nombre_archivo, ".txt");
+    
     FILE *archivo;
-
-    //archivo=fopen(nombre_archivo, "rb+");
-    archivo=fopen("prueba.txt", "rb+");
+    archivo=fopen(nombre_archivo, "rb+");
+    //archivo=fopen("prueba.txt", "rb+");
 
     if(!archivo) return -1;
     char letra, auxiliar;
 
     char palabra[30], origen[30], destino[30];
     int i=0, inicio=0;
-    printf("\n");
+
     while(!feof(archivo)){ //Leemos letra a letra el archivo
         fread(&letra,sizeof(char),1,archivo);
+
+        if(letra=='.' || letra==',' || letra=='-' || letra=='?' || letra=='!' || letra==-62){
+            if(letra==-62) fread(&letra,sizeof(char),1,archivo);
+            fread(&letra,sizeof(char),1,archivo);
+        }
+
+        if(letra==' ' || letra=='\n'){
+            letra='\0';
+        }
+        
+        //Evalua letras con acentos o ~
         if(letra==-61){
             fread(&letra,sizeof(char),1,archivo);
             letra=evalua_caracter_especial(letra);
         }
-        if(letra>=97 && letra<=122 || letra>=65 && letra<=90){
+
+        //Evaluamos que la letra no este en mayusculas para evitar duplicidad de palabras
+        if(letra>=65 && letra<=90) letra=tolower(letra);
+
+        if(letra>=97 && letra<=122){
             palabra[i]=letra;
             i++;
         }
-        else{
+        if(letra=='\0' && palabra[0]!='\0'){
             if(!feof(archivo)){
+                palabra[i]='\0';
                 i=0;
-                printf("Palabra: %s\n", palabra);
-                inserta_nodo(grafo, palabra);
                 elementos++;
+                inserta_nodo(grafo, palabra);
+                printf("Palabra: %s\n", palabra);
                 if(inicio==0){
                     strcpy(origen, palabra);
                     inicio=1; //Nos ayuda a evaluar que ya empezamos a crear aristas
@@ -235,7 +240,6 @@ int lee_archivo(struct nodo **grafo, char *nombre_archivo){
                     inserta_arista(*grafo, origen, destino);
                     strcpy(origen, destino);
                 }
-                memset(palabra, '\0', 20);
             }
         }
     }
@@ -243,6 +247,7 @@ int lee_archivo(struct nodo **grafo, char *nombre_archivo){
     return 0;
 }
 
+//Convierte caracteres especiales a caracteres comunes
 char evalua_caracter_especial(char letra){
     if(letra==-95 || letra==-127) return 'a';
     if(letra==-87 || letra==-119) return 'e';
@@ -250,26 +255,132 @@ char evalua_caracter_especial(char letra){
     if(letra==-77 || letra==-109) return 'o';
     if(letra==-70 || letra==-102) return 'u';
     if(letra==-79 || letra==-111) return 'n';
+    else return 'x';
 }
 
 int guarda_grafo(struct nodo *grafo, char *nombre_archivo){
     FILE *archivo;
 
-    archivo=fopen("archivo2.txt", "w+");
-    if(!archivo) return -1;
-    
-    while(grafo){
-        fwrite(grafo,sizeof(struct nodo),1,archivo);
-        grafo=grafo->siguiente;
+    archivo=fopen(nombre_archivo, "w+");
+    if(!archivo){
+        fclose(archivo);
+        return -1;
     }
+
+    remove(nombre_archivo); //Borramos archivo para evitar duplicidad de datos
+    archivo=fopen(nombre_archivo, "a+"); //Y lo volvemos a abrir
+    escribe_datos(archivo, grafo);    
 
     fclose(archivo);
     return 0;
 
 }
 
+int escribe_datos(FILE *archivo, struct nodo *grafo){
+    if(!grafo) return 0;
+
+    fprintf(archivo, "%s\n", grafo->palabra);
+    escribe_aristas(archivo, grafo->aristas);
+    escribe_datos(archivo, grafo->siguiente);
+}
+
+int escribe_aristas(FILE *archivo, struct arista *aristas){
+    if(!aristas) return 0;
+    fprintf(archivo, "%s\n", aristas->vertice->palabra);
+    imprime_aristas(aristas->siguiente);
+}
+
 int prob_ocurrencia(struct nodo **grafo){
     if(!*grafo) return 0;
     (*grafo)->ocurrencia=(float)(*grafo)->frecuencia/elementos;
     prob_ocurrencia(&(*grafo)->siguiente);
+}
+
+/*TEOREMA DE BAYES
+FORMULAS
+
+         P(B|A)*P(A)
+P(A|B)=---------------
+            P(B)
+          
+         P(BnA)
+P(B|A)= --------- ; P(A)!= 0
+          P(A)
+
+=Despejando P(B|A) en P(A|B)...=
+
+           P(BnA) * ~P(A)~
+P(A|B)=-------------------
+            P(B) * ~P(A)~
+
+Por lo tanto, despues del despeje del Teorema de Bayes
+
+        P(BnA)
+P(A|B)=--------
+         P(B)
+
+
+*/
+
+int teorema_bayes(struct nodo *grafo){
+    if(!grafo) return 0;
+    bayes_aristas(grafo, &grafo->aristas);
+    teorema_bayes(grafo->siguiente);
+}
+int bayes_aristas(struct nodo *anterior, struct arista **arista){
+    if(!*arista || !anterior) return 0;
+
+    float BnA=(float)(*arista)->frecuencia/(float)anterior->frecuencia_aristas;
+    (*arista)->peso=BnA/anterior->ocurrencia;
+    //printf("Peso: %f\n", (*arista)->peso);
+    bayes_aristas(anterior, &(*arista)->siguiente);
+}
+
+int ordena_nodos(struct nodo *grafo){
+	if(!grafo) return 0;
+	bool estado=false;
+	do{
+		estado=false;
+		ordena_aristas(&grafo->aristas,&estado);	
+	}
+    while(estado==true);
+	ordena_nodos(grafo->siguiente);
+}
+
+int ordena_aristas(struct arista **arista, bool *estado){
+	if(!(*arista)){
+		return 0;
+	}
+	if(!(*arista)->siguiente){
+		return 0;
+	}
+
+	if((*arista)->peso<(*arista)->siguiente->peso){ //Se ordenaran los pesos de las aristas de mayor a menor
+		struct arista *pActual=(*arista)->siguiente;
+		(*arista)->siguiente=pActual->siguiente;
+		pActual->siguiente=(*arista);
+		*arista=pActual;
+		*estado=true;
+	}
+	ordena_aristas(&(*arista)->siguiente,estado);
+}
+
+int frases_comunes(struct nodo *grafo, char *palabra){
+    struct nodo *pBusqueda=busca_nodo(grafo, palabra);
+    if(!pBusqueda)return -1;
+    
+    int contador=0;
+    struct arista *pArista=pBusqueda->aristas;
+
+    printf("Frases mas comunes\n");
+    while(contador < pArista->frecuencia){
+        while(pArista->vertice){
+            printf("%s->", pArista->vertice->palabra);
+            pArista->vertice=pArista->vertice->siguiente;
+        }
+        printf("\n\n\n");
+        pArista=pArista->siguiente;
+        contador++;
+    }
+    return 0;
 }
