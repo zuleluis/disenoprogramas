@@ -18,6 +18,7 @@ Hacer un programa en C que de modo gráfico usando OpenGL:
 #include <ctype.h>
 #include <stdbool.h>
 #include <math.h>
+#include <unistd.h>
 
 struct nodo{
     char palabra[30];
@@ -66,6 +67,7 @@ void inicializa();
 static void grafos(void);
 void texto(char *frase);
 void texto2(char *frase);
+void texto3(char *frase);
 static void redimensiona(int ancho, int alto);
 void asignar_posiciones(struct nodo *grafo,int posx,int posy,int contador);
 void crea_nodo(struct nodo *grafo);
@@ -77,14 +79,21 @@ double red(double color);
 double green(double color);
 double blue(double color);
 void menu_principal(int opcion);
+//Ventanas auxiliares
+static void guardado_exitosamente(void);
+static void error(void);
+static void cargando(void);
+static void grafo_eliminado(void);
+static void creditos(void);
 
 
 //Variables globales
 int elementos=0; //Cantidad de elementos en el grafo
-int x=100, y=100, rango=0, tam=200;
-struct nodo *raiz=NULL;
+int x=100, y=100, rango=0, tam=200; // X: Posicion en X, Y: Posicion en Y, Rango: Ayuda a distribuir los nodos a traves de la ventana. Es decir, si hay 10 elementos, en cada linea habran 3 elementos 
+struct nodo *raiz=NULL;             //Tam: Distancia entre un nodo y otro. A mayor tamaño mayor distancia
 char frase[50];
 int ventana=0,ventana2=0;
+int temporizador;
 
 
 int main(int argc, char *argv[])
@@ -439,6 +448,7 @@ int cantidad_elementos(struct nodo *grafo){
 
 void inicializa(){
     glutInitWindowSize(840,600);
+    //glutInitWindowSize(640,400);
 	glutInitWindowPosition(10,10);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	ventana=glutCreateWindow("EL PREDICTOR");
@@ -483,7 +493,7 @@ static void grafos(void){
 
     glColor3d(0.30,0.30,0.30);
 	glRasterPos2f(7.0f,14.0f);
-	sprintf(frase,"Menu: clic derecho");
+	strcpy(frase,"Menu: clic derecho");
 	texto2(frase);
 
     glColor3d(red(218),green(247),blue(166));	
@@ -496,7 +506,7 @@ static void grafos(void){
 
     glColor3d(0.30,0.30,0.30);
 	glRasterPos2f(27.0f,30.0f);
-	sprintf(frase,"Origen");
+	strcpy(frase,"Origen");
 	texto2(frase);
 
     glColor3d(red(255),green(195),blue(0));	
@@ -509,22 +519,22 @@ static void grafos(void){
 
     glColor3d(0.30,0.30,0.30);
 	glRasterPos2f(27.0f,46.0f);
-	sprintf(frase,"Destino");
+	strcpy(frase,"Destino");
 	texto2(frase);
 
     glColor3d(0.30,0.30,0.30);
 	glRasterPos2f(7.0f,62.0f);
-	sprintf(frase,"Up/Down: Mov. Horizontal");
+	strcpy(frase,"Up/Down: Mov. Horizontal");
 	texto2(frase);
 
     glColor3d(0.30,0.30,0.30);
 	glRasterPos2f(7.0f,78.0f);
-	sprintf(frase,"Lef/Right: Mov. Vertical");
+	strcpy(frase,"Lef/Right: Mov. Vertical");
 	texto2(frase);
 
     glColor3d(0.30,0.30,0.30);
 	glRasterPos2f(7.0f,94.0f);
-	sprintf(frase,"F4: Salir");
+	strcpy(frase,"F4: Salir");
 	texto2(frase);
 
 	glPopMatrix();
@@ -537,6 +547,9 @@ void texto(char *frase){
 
 void texto2(char *frase){
 	for(int i=0;i<strlen(frase);i++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10,frase[i]);
+}
+void texto3(char *frase){
+    for(int i=0;i<strlen(frase);i++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,frase[i]);
 }
 
 static void redimensiona(int ancho, int alto){
@@ -557,8 +570,8 @@ void asignar_posiciones(struct nodo *grafo,int posx,int posy,int contador){
 	grafo->y=posy;
 
 	if(contador==rango){
-		posx=x-tam;
-	    posy=posy+tam;
+		posx=x-tam; //X regresa al inicio de la fila
+	    posy=posy+tam; //Y baja una posicion hacia abajo
 		contador=0;
 	}
 	contador++;
@@ -630,7 +643,7 @@ void crea_nodo(struct nodo *grafo){
     
     glColor3d(0,0,0);
 	glRasterPos2f(grafo->x-(tam/6),grafo->y);
-	sprintf(frase,grafo->palabra);
+	strcpy(frase,grafo->palabra);
 	texto(frase);
 
 	glColor3d(0,0,0);
@@ -642,10 +655,10 @@ void crea_nodo(struct nodo *grafo){
 }
 
 void teclas_direccion(int tecla, int posx, int posy){
-	if(tecla==GLUT_KEY_UP) y=y+10;
-	if(tecla==GLUT_KEY_DOWN) y=y-10;
-	if(tecla==GLUT_KEY_LEFT) x=x+10;
-	if(tecla==GLUT_KEY_RIGHT) x=x-10;
+	if(tecla==GLUT_KEY_UP) y=y+30;
+	if(tecla==GLUT_KEY_DOWN) y=y-30;
+	if(tecla==GLUT_KEY_LEFT) x=x+30;
+	if(tecla==GLUT_KEY_RIGHT) x=x-30;
     if(tecla==GLUT_KEY_F4) exit(0);
 }
 
@@ -653,9 +666,21 @@ void actualizar(){
     glutSetWindow(ventana);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glutPostRedisplay();
-	if(ventana2!=0){
+	if(ventana2!=0){ 
 		glutSetWindow(ventana2);
 		glutPostRedisplay();
+        if(temporizador==1){
+            sleep(1.5);
+            glutDestroyWindow(ventana2);
+            ventana2=0;
+            temporizador=0;
+        }
+        if(temporizador==2){
+            sleep(4);
+            glutDestroyWindow(ventana2);
+            ventana2=0;
+            temporizador=0;
+        }
 	}
 }
 
@@ -672,45 +697,215 @@ double blue(double color){
 }
 
 void menu_principal(int opcion){
-    /*
-    glutAddMenuEntry("Agregar archivo",1);
-    glutAddMenuEntry("Guardar grafo",2);
-    glutAddMenuEntry("Prediccion de frase",3);
-    glutAddMenuEntry("Frase mas comun dada una palabra",4);
-    glutAddMenuEntry("Eliminar grafo",5);
-    */
-   switch(opcion){
-       case 1:{ //Agregar que pida el nombre del archivo desde la pantalla
-            lee_archivo(&raiz, "prueba.txt");
-            prob_ocurrencia(&raiz);
-            teorema_bayes(raiz);
-            ordena_nodos(raiz);
-            imprime_lista(raiz);
-            printf("\n\nHay %i elementos\n", elementos);
-           break;
-       };
-       case 2:{ //Que imprima en pantalla que se guardo satisfactoriamente
-           guarda_grafo(raiz, "backup.txt");
-           break;
-       };
-       case 3:{ //Prediccion jeje
-           break;
-       };
-       case 4:{ //Frase mas comun jeje :v
-           break;
-       };
-       case 5:{
-           elimina_nodos(&raiz);
-           break;
-       };
-       case 6:{ //Imprime en pantalla creditos
+    if(ventana2!=0){
+        /*posicion=0; campo=1; leer_archivo=2; posicion_predictiva=0; bandera_agregar_frase=2; bandera_predictiva=0; py=35;
+        memset(frase,'\0',strlen(frase)); memset(palabra_p,'\0',strlen(palabra_p)); memset(nombre_archivo,'\0',100);
+        memset(prediccion,'\0',20); memset(prediccion2,'\0',20); memset(prediccion3,'\0',20);
+        memset(palabra,'\0',strlen(palabra_p)); memset(palabra2,'\0',strlen(palabra_p)); memset(palabra3,'\0',strlen(palabra_p));
+        memset(palabra4,'\0',strlen(palabra_p)); memset(palabra5,'\0',strlen(palabra_p));*/
+        glutDestroyWindow(ventana2);
+        ventana2=0;
+    }
+    switch(opcion){
+        case 1:{ //Agregar que pida el nombre del archivo desde la pantalla
+            ventana2=glutCreateSubWindow(ventana,270,225,300,150);
+            if(lee_archivo(&raiz, "don_quijote.txt")==0){
+                glutDisplayFunc(cargando);
+                prob_ocurrencia(&raiz);
+                teorema_bayes(raiz);
+                ordena_nodos(raiz);
+                imprime_lista(raiz);
+                printf("\n\nHay %i elementos\n", elementos);
+            }
+            else glutDisplayFunc(error);
+            temporizador=1;
             break;
-       };
-       case 7:{
-           exit(0);
-           break;
-       };
+        };
+        case 2:{ //Que imprima en pantalla que se guardo satisfactoriamente
+            ventana2=glutCreateSubWindow(ventana,270,225,300,150);
+            if(guarda_grafo(raiz, "backup.txt")==0) glutDisplayFunc(guardado_exitosamente);
+            else glutDisplayFunc(error);
+            temporizador=1;
+            break;
+        };
+        case 3:{ //Prediccion jeje
+            break;
+        };
+        case 4:{ //Frase mas comun jeje :v
+            break;
+        };
+        case 5:{
+            ventana2=glutCreateSubWindow(ventana,270,225,300,150);
+            elimina_nodos(&raiz);
+            if(!raiz) glutDisplayFunc(grafo_eliminado);
+            else glutDisplayFunc(error);
+            temporizador=1;
+            break;
+        };
+        case 6:{
+            ventana2=glutCreateSubWindow(ventana,0,0,840,600);
+            glutDisplayFunc(creditos);
+            temporizador=2;
+            break;
+        };
+        case 7:{
+            exit(0);
+            break;
+        };
    }
-   
+}
 
+static void guardado_exitosamente(void){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+
+    glColor3d(red(233),green(233),blue(233));	
+	glBegin (GL_QUADS);
+        glVertex2f(-0.96,-0.91);
+		glVertex2f(-0.96,0.91);
+		glVertex2f(0.96,0.91);
+		glVertex2f(0.96,-0.91);
+	glEnd();
+
+    glColor3d(0,0,0);
+	glRasterPos2f(-0.65f, 0.1f);
+    strcpy(frase, "Guardado exitosamente");
+	texto3(frase);
+    glRasterPos2f(-0.25f, -0.1f);
+    strcpy(frase, "backup.txt");
+    texto2(frase);
+    glPopMatrix();
+	glutSwapBuffers();
+}
+
+static void error(void){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+
+
+    glColor3d(red(233),green(233),blue(233));	
+	glBegin (GL_QUADS);
+        glVertex2f(-0.96,-0.91);
+		glVertex2f(-0.96,0.91);
+		glVertex2f(0.96,0.91);
+		glVertex2f(0.96,-0.91);
+	glEnd();
+
+    glColor3d(0,0,0);
+	glRasterPos2f(-0.25f, 0.0f);
+    strcpy(frase, "ERROR!!");
+	texto3(frase);
+    glPopMatrix();
+	glutSwapBuffers();
+}
+
+static void cargando(void){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+
+
+    glColor3d(red(233),green(233),blue(233));	
+	glBegin (GL_QUADS);
+        glVertex2f(-0.96,-0.91);
+		glVertex2f(-0.96,0.91);
+		glVertex2f(0.96,0.91);
+		glVertex2f(0.96,-0.91);
+	glEnd();
+
+    glColor3d(0,0,0);
+	glRasterPos2f(-0.70f, 0.0f);
+    strcpy(frase, "Cargando archivo...");
+	texto3(frase);
+    glPopMatrix();
+	glutSwapBuffers();
+}
+
+static void grafo_eliminado(void){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+
+
+    glColor3d(red(233),green(233),blue(233));	
+	glBegin (GL_QUADS);
+        glVertex2f(-0.96,-0.91);
+		glVertex2f(-0.96,0.91);
+		glVertex2f(0.96,0.91);
+		glVertex2f(0.96,-0.91);
+	glEnd();
+
+    glColor3d(0,0,0);
+	glRasterPos2f(-0.45f, 0.0f);
+    strcpy(frase, "Grafo eliminado");
+	texto3(frase);
+    glPopMatrix();
+	glutSwapBuffers();
+}
+
+static void creditos(void){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+
+    glColor3d(red(255),green(255),blue(255));	
+	glBegin (GL_QUADS);
+        glVertex2f(-0.7,0.85);
+		glVertex2f(0.7,0.85);
+		glVertex2f(0.7,-0.7);
+		glVertex2f(-0.7,-0.7);
+	glEnd();
+
+    glColor3d(red(240),green(133),blue(240));	
+	glBegin (GL_QUADS);
+        glVertex2f(-0.7,-0.7);
+		glVertex2f(-0.7,0.7);
+		glVertex2f(0.7,0.7);
+		glVertex2f(0.7,-0.7);
+	glEnd();
+
+    glColor3d(0,0,0);
+	glRasterPos2f(-0.25f, 0.75f);
+    strcpy(frase, "DISENO DE PROGRAMAS");
+	texto3(frase);
+
+    glColor3d(1,1,1);
+	glRasterPos2f(-0.25f, 0.5f);
+    strcpy(frase, "Universidad Veracruzana");
+	texto3(frase);
+
+    glColor3d(1,1,1);
+	glRasterPos2f(-0.20f, 0.35f);
+    strcpy(frase, "Programa Educativo");
+	texto3(frase);
+
+    glColor3d(1,1,1);
+	glRasterPos2f(-0.21f, 0.25f);
+    strcpy(frase, "Ingenieria Informatica");
+	texto3(frase);
+
+    glColor3d(1,1,1);
+	glRasterPos2f(-0.23f, 0.05f);
+    strcpy(frase, "Programa realizado por");
+	texto3(frase);
+
+    glColor3d(1,1,1);
+	glRasterPos2f(-0.3f, -0.05f);
+    strcpy(frase, "Zulema Concepcion Luis Cruz");
+	texto3(frase);
+
+    glColor3d(1,1,1);
+	glRasterPos2f(-0.13f, -0.15f);
+    strcpy(frase, "Enero 2021");
+	texto3(frase);
+
+    glPopMatrix();
+	glutSwapBuffers();
 }
