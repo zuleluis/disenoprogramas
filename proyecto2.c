@@ -1,14 +1,18 @@
 /*
 Hacer un programa en C que de modo gráfico usando OpenGL:
-    - Genere y muestre un grafo conectado y dirigido, basado en las palabras del archivo.
-    - Guarde el grafo y que pueda anexar otro archivo de texto al grafo, actualizando el 
-       grafo existente y sin borrar los datos previos.
-    - Permita capturar en tiempo de ejecución una frase y que palabra por palabra haga la predicción de 
-      la palabra siguiente basándose en el camino más corto (Dijkstra) desde la primera palabra capturada,
-      una vez capturada debe actualizar el grafo. (2 PTS)
-    - Tenga una opción para desplegar las frases más comunes ordenadas de la más común a la menos, dada una
-    palabra inicial por el usuario. (2 PTS)
+    OK - Lea un archivo dado por el usuario, que contenga un texto normal (Ver archivo anexo).
+    OK - Genere y muestre un grafo conectado y dirigido, basado en las palabras del archivo.
+    OK - Guarde el grafo y que pueda anexar otro archivo de texto al grafo, actualizando el
+         grafo existente y sin borrar los datos previos.
+    OK - Muestre nodos y sus valores (P(A))
+    OK - Muestre aristas y sus pesos (P(A|B))
+    - Permita capturar en tiempo de ejecución una frase y que palabra por palabra haga la
+      predicción de la palabra siguiente basándose en el camino más corto (Dijkstra) desde
+      la primera palabra capturada, una vez capturada debe actualizar el grafo. (2 PTS)
+    - Tenga una opción para desplegar las frases más comunes ordenadas de la más común a
+      la menos, dada una palabra inicial por el usuario. (2 PTS)
     - Debe mostrar las palabras y las frases en un color distinto.
+    OK - Tener una opción de limpiar todo el grafo y volver a empezar con uno nuevo.
 */
 
 #include <GL/glut.h>
@@ -51,12 +55,10 @@ int frases_comunes(struct nodo *grafo, char *palabra);
 int elimina_nodos(struct nodo **grafo);
 void elimina_aristas(struct arista **arista);
 int cantidad_elementos(struct nodo *grafo);
+int prediccion(struct nodo *grafo, char *palabra);
 
 int lee_archivo(struct nodo **grafo, char *nombre_archivo);
 char evalua_caracter_especial(char letra);
-int guarda_grafo(struct nodo *grafo, char *nombre_archivo);
-int escribe_datos(FILE *archivo, struct nodo *grafo);
-int escribe_aristas(FILE *archivo, struct arista *aristas);
 
 int prob_ocurrencia(struct nodo **grafo);
 int teorema_bayes(struct nodo *grafo);
@@ -79,6 +81,10 @@ double red(double color);
 double green(double color);
 double blue(double color);
 void menu_principal(int opcion);
+static void teclado_agregar(unsigned char tecla, int x, int y);
+static void agregar_archivo(void);
+static void teclado_predicciones(unsigned char tecla, int x, int y);
+static void prediccion_palabras(void);
 //Ventanas auxiliares
 static void guardado_exitosamente(void);
 static void error(void);
@@ -91,51 +97,12 @@ static void creditos(void);
 int elementos=0; //Cantidad de elementos en el grafo
 int x=100, y=100, rango=0, tam=200; // X: Posicion en X, Y: Posicion en Y, Rango: Ayuda a distribuir los nodos a traves de la ventana. Es decir, si hay 10 elementos, en cada linea habran 3 elementos 
 struct nodo *raiz=NULL;             //Tam: Distancia entre un nodo y otro. A mayor tamaño mayor distancia
-char frase[50];
-int ventana=0,ventana2=0;
-int temporizador;
+char frase[50], nombrearchivo[30], palabra_actual[30], palabra_siguiente[30], frase_agregar[150];
+int ventana=0,ventana2=0, ventana3=0; //Ventana: Ventana principal, ventana2: Ventana secundaria, ventana3: Ventana para mostrar algunos warnings
+int temporizador, posicion=0, estado=3, estado_prediccion=0;
 
 
-int main(int argc, char *argv[])
-{
-    /*inserta_nodo(&raiz, "hola");
-    inserta_nodo(&raiz, "esto");
-    inserta_nodo(&raiz, "es");
-    inserta_nodo(&raiz, "una");
-    inserta_nodo(&raiz, "prueba");
-    inserta_nodo(&raiz, "para");
-    inserta_nodo(&raiz, "ver");
-    inserta_nodo(&raiz, "si");
-    inserta_nodo(&raiz, "esto");
-    inserta_nodo(&raiz, "funciona");
-    inserta_nodo(&raiz, "para");
-    inserta_nodo(&raiz, "mi");
-
-    inserta_arista(raiz, "hola", "esto");
-    inserta_arista(raiz, "esto", "es");
-    inserta_arista(raiz, "es", "una");
-    inserta_arista(raiz, "una", "prueba");
-    inserta_arista(raiz, "prueba", "para");
-    inserta_arista(raiz, "para", "ver");
-    inserta_arista(raiz, "ver", "si");
-    inserta_arista(raiz, "si", "esto");
-    inserta_arista(raiz, "esto", "funciona");
-    inserta_arista(raiz, "funciona", "para");
-    inserta_arista(raiz, "para", "mi");*/
-
-    /*lee_archivo(&raiz, "prueba2.txt");
-    prob_ocurrencia(&raiz);
-    teorema_bayes(raiz);
-    ordena_nodos(raiz);
-    imprime_lista(raiz);
-    printf("\n\nHay %i elementos\n", elementos);
-    //frases_comunes(raiz, "para");
-    if(elimina_nodos(&raiz)==0) elementos=0;
-    printf("\n\nHay %i elementos\n", elementos);
-    if(imprime_lista(raiz)==-1) printf("Fin de lista\n\n");
-
-    //guarda_grafo(raiz, "backup.txt");*/
-    
+int main(int argc, char *argv[]){
     glutInit(&argc, argv);
 	inicializa();
 	glutIdleFunc(actualizar);
@@ -214,15 +181,30 @@ int imprime_aristas(struct arista *arista){
     imprime_aristas(arista->siguiente);
 }
 
-int lee_archivo(struct nodo **grafo, char *nombre_archivo){
-    //strcat(nombre_archivo, ".txt");
-    
-    FILE *archivo;
+int lee_archivo(struct nodo **grafo, char *nombre_archivo){   
+    char nombre_backup[20];
+    char letra, auxiliar;
+    if(strcmp(nombre_archivo, "backup.txt")==0){
+        strcpy(nombre_backup, "backup(2).txt");
+    }
+    else strcpy(nombre_backup, "backup.txt");
+
+    FILE *archivo, *backup;
     archivo=fopen(nombre_archivo, "rb+");
-    //archivo=fopen("prueba.txt", "rb+");
+    backup=fopen(nombre_backup, "ab+"); //Como actualizacion para seguir agregando datos
 
     if(!archivo) return -1;
-    char letra, auxiliar;
+    if(!backup) return -1;
+
+    //Copiamos el archivo en el backup
+    while(!feof(archivo)){
+        fread(&letra,sizeof(char),1,archivo);
+        fwrite(&letra,sizeof(char),1,backup);
+    }
+    fclose(archivo);
+    fclose(backup);
+
+    archivo=fopen(nombre_archivo, "rb+");    
 
     char palabra[30], origen[30], destino[30];
     int i=0, inicio=0;
@@ -282,41 +264,9 @@ char evalua_caracter_especial(char letra){
     if(letra==-87 || letra==-119) return 'e';
     if(letra==-83 || letra==-115) return 'i';
     if(letra==-77 || letra==-109) return 'o';
-    if(letra==-70 || letra==-102) return 'u';
+    if(letra==-70 || letra==-102 || letra==-68) return 'u';
     if(letra==-79 || letra==-111) return 'n';
     else return 'x';
-}
-
-int guarda_grafo(struct nodo *grafo, char *nombre_archivo){
-    FILE *archivo;
-
-    archivo=fopen(nombre_archivo, "w+");
-    if(!archivo){
-        fclose(archivo);
-        return -1;
-    }
-
-    remove(nombre_archivo); //Borramos archivo para evitar duplicidad de datos
-    archivo=fopen(nombre_archivo, "a+"); //Y lo volvemos a abrir
-    escribe_datos(archivo, grafo);    
-
-    fclose(archivo);
-    return 0;
-
-}
-
-int escribe_datos(FILE *archivo, struct nodo *grafo){
-    if(!grafo) return 0;
-
-    fprintf(archivo, "%s\n", grafo->palabra);
-    escribe_aristas(archivo, grafo->aristas);
-    escribe_datos(archivo, grafo->siguiente);
-}
-
-int escribe_aristas(FILE *archivo, struct arista *aristas){
-    if(!aristas) return 0;
-    fprintf(archivo, "%s\n", aristas->vertice->palabra);
-    imprime_aristas(aristas->siguiente);
 }
 
 int prob_ocurrencia(struct nodo **grafo){
@@ -448,7 +398,6 @@ int cantidad_elementos(struct nodo *grafo){
 
 void inicializa(){
     glutInitWindowSize(840,600);
-    //glutInitWindowSize(640,400);
 	glutInitWindowPosition(10,10);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	ventana=glutCreateWindow("EL PREDICTOR");
@@ -459,14 +408,12 @@ void inicializa(){
 
 	glutCreateMenu(menu_principal);
 	glutAddMenuEntry("Agregar archivo",1);
-    glutAddMenuEntry("Guardar grafo",2);
-    glutAddMenuEntry("Prediccion de frase",3);
-    glutAddMenuEntry("Frase mas comun dada una palabra",4);
-    glutAddMenuEntry("Eliminar grafo",5);
-    glutAddMenuEntry("Creditos",6);
-    glutAddMenuEntry("Salir",7);
+    glutAddMenuEntry("Capturar una frase",2);
+    glutAddMenuEntry("Frase mas comun dada una palabra",3);
+    glutAddMenuEntry("Eliminar grafo",4);
+    glutAddMenuEntry("Creditos",5);
+    glutAddMenuEntry("Salir",6);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
-    //glutKeyboardFunc(teclado);
 }
 
 static void grafos(void){
@@ -548,6 +495,7 @@ void texto(char *frase){
 void texto2(char *frase){
 	for(int i=0;i<strlen(frase);i++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10,frase[i]);
 }
+
 void texto3(char *frase){
     for(int i=0;i<strlen(frase);i++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,frase[i]);
 }
@@ -666,6 +614,7 @@ void actualizar(){
     glutSetWindow(ventana);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glutPostRedisplay();
+
 	if(ventana2!=0){ 
 		glutSetWindow(ventana2);
 		glutPostRedisplay();
@@ -682,6 +631,18 @@ void actualizar(){
             temporizador=0;
         }
 	}
+
+    if(ventana3!=0){ 
+		glutSetWindow(ventana3);
+		glutPostRedisplay();
+        if(temporizador==1){
+            sleep(1.5);
+            glutDestroyWindow(ventana3);
+            ventana3=0;
+            temporizador=0;
+        }
+	}
+    
 }
 
 double red(double color){
@@ -703,52 +664,47 @@ void menu_principal(int opcion){
         memset(prediccion,'\0',20); memset(prediccion2,'\0',20); memset(prediccion3,'\0',20);
         memset(palabra,'\0',strlen(palabra_p)); memset(palabra2,'\0',strlen(palabra_p)); memset(palabra3,'\0',strlen(palabra_p));
         memset(palabra4,'\0',strlen(palabra_p)); memset(palabra5,'\0',strlen(palabra_p));*/
+
         glutDestroyWindow(ventana2);
         ventana2=0;
     }
     switch(opcion){
         case 1:{ //Agregar que pida el nombre del archivo desde la pantalla
             ventana2=glutCreateSubWindow(ventana,270,225,300,150);
-            if(lee_archivo(&raiz, "don_quijote.txt")==0){
-                glutDisplayFunc(cargando);
-                prob_ocurrencia(&raiz);
-                teorema_bayes(raiz);
-                ordena_nodos(raiz);
-                imprime_lista(raiz);
-                printf("\n\nHay %i elementos\n", elementos);
+            glutKeyboardFunc(teclado_agregar);
+            glutDisplayFunc(agregar_archivo);
+            break;
+        };
+        case 2:{ //Prediccion jeje
+            ventana2=glutCreateSubWindow(ventana,270,225,300,150);
+            glutKeyboardFunc(teclado_predicciones);
+            glutDisplayFunc(prediccion_palabras);
+            break;
+        };
+        case 3:{ //Frase mas comun jeje :v
+            break;
+        };
+        case 4:{
+            ventana2=glutCreateSubWindow(ventana,270,225,300,150);
+            elimina_nodos(&raiz);
+            if(!raiz){
+                glutDisplayFunc(grafo_eliminado); 
+                x=100; 
+                y=100;
+                rango=0;
+                tam=200;
             }
             else glutDisplayFunc(error);
             temporizador=1;
             break;
         };
-        case 2:{ //Que imprima en pantalla que se guardo satisfactoriamente
-            ventana2=glutCreateSubWindow(ventana,270,225,300,150);
-            if(guarda_grafo(raiz, "backup.txt")==0) glutDisplayFunc(guardado_exitosamente);
-            else glutDisplayFunc(error);
-            temporizador=1;
-            break;
-        };
-        case 3:{ //Prediccion jeje
-            break;
-        };
-        case 4:{ //Frase mas comun jeje :v
-            break;
-        };
         case 5:{
-            ventana2=glutCreateSubWindow(ventana,270,225,300,150);
-            elimina_nodos(&raiz);
-            if(!raiz) glutDisplayFunc(grafo_eliminado);
-            else glutDisplayFunc(error);
-            temporizador=1;
-            break;
-        };
-        case 6:{
             ventana2=glutCreateSubWindow(ventana,0,0,840,600);
             glutDisplayFunc(creditos);
             temporizador=2;
             break;
         };
-        case 7:{
+        case 6:{
             exit(0);
             break;
         };
@@ -908,4 +864,189 @@ static void creditos(void){
 
     glPopMatrix();
 	glutSwapBuffers();
+}
+
+static void teclado_agregar(unsigned char tecla, int x, int y){
+    if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla=='_' || tecla=='-' || tecla=='.'|| (tecla>='0' && tecla<='9')){
+        nombrearchivo[posicion]=tecla;
+        posicion++;
+    }
+
+    if(tecla==8 && posicion>0){ //Tecla de retroceso
+		posicion--;
+        nombrearchivo[posicion]='\0';
+	}
+
+    if(tecla==13 && posicion>0){ //Tecla de enter
+        strcat(nombrearchivo, ".txt");
+        if(lee_archivo(&raiz, nombrearchivo)==0){
+            prob_ocurrencia(&raiz);
+            teorema_bayes(raiz);
+            ordena_nodos(raiz);
+            imprime_lista(raiz);
+            memset(frase,'\0', 50);
+            memset(nombrearchivo, '\0', 30);
+            estado=1;
+        }
+        else{
+            memset(frase,'\0', 50);
+            memset(nombrearchivo, '\0', 30);
+            estado=0;
+        }
+
+        glutDestroyWindow(glutGetWindow());
+		ventana2=0;
+        posicion=0;
+    }
+
+    if(tecla==27){ //Tecla Esc
+        glutDestroyWindow(glutGetWindow());
+        memset(frase,'\0', 50);
+        memset(nombrearchivo, '\0', 30);
+		ventana2=0;
+        posicion=0;
+    }
+}
+
+static void agregar_archivo(void){
+    glClearColor(0,0,0,0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D (-100,100,-50,50);
+
+    glColor3d(red(233),green(233),blue(233));	
+	glBegin (GL_QUADS);
+        glVertex2f(-96,-46);
+		glVertex2f(-96,46);
+		glVertex2f(96,46);
+		glVertex2f(96,-46);
+	glEnd();
+	
+	glColor3d(0,0,0);
+	glRasterPos2f(-80.0f,36.0f);
+	strcpy(frase,"Ingrese el nombre del archivo sin extension");
+	texto(frase);
+
+	glColor3d(0,0,0);
+	glRasterPos2f(-93.0f,0.0f);
+	strcpy(frase,"Archivo:");
+	texto(frase);
+
+	glColor3d(red(88),green(24), blue(69));
+	glRasterPos2f(-60.0f,0.0f);
+	strcpy(frase,nombrearchivo);
+	texto(frase);
+
+    glColor3d(0,0,0);
+	glRasterPos2f(45.0f,-40.0f);
+	strcpy(frase,"ESC: Cancelar");
+	texto2(frase);
+	
+	glPopMatrix();
+	glutSwapBuffers();
+}
+
+int prediccion(struct nodo *grafo, char *palabra){
+    struct nodo *pBusqueda=busca_nodo(grafo, palabra);
+    if(pBusqueda){
+        strcpy(palabra_actual, grafo->palabra);
+        if(pBusqueda->aristas) strcpy(palabra_siguiente, grafo->aristas->vertice->palabra);
+    }
+    return 0;
+}
+
+static void teclado_predicciones(unsigned char tecla, int x, int y){
+    if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla=='_' || tecla=='-' || tecla=='.'|| (tecla>='0' && tecla<='9') || tecla==32){
+        if(tecla==32){
+            tecla='\0';
+            estado_prediccion=1;
+        }
+        palabra_actual[posicion]=tecla;
+        posicion++;
+    }
+
+    if(tecla==8 && posicion>0){ //Tecla de retroceso
+		posicion--;
+        palabra_actual[posicion]='\0';
+	}
+
+    if(tecla==32 && estado_prediccion==1){ //Tecla de espacio
+        prediccion(raiz, palabra_actual);
+		estado_prediccion=0;
+		posicion=0;
+		memset(palabra_actual,'\0',strlen(palabra_actual));
+        /*glutDestroyWindow(glutGetWindow());
+		ventana2=0;
+        posicion=0;*/
+    }
+
+    if(tecla==27){ //Tecla Esc
+        glutDestroyWindow(glutGetWindow());
+        memset(frase,'\0', 50);
+        memset(nombrearchivo, '\0', 30);
+		ventana2=0;
+        posicion=0;
+    }
+}
+
+static void prediccion_palabras(void){
+    glClearColor(0,0,0,0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D (-100,100,-50,50);
+
+    glColor3d(red(233),green(233),blue(233));	
+	glBegin (GL_QUADS);
+        glVertex2f(-96,-46);
+		glVertex2f(-96,46);
+		glVertex2f(96,46);
+		glVertex2f(96,-46);
+	glEnd();
+	
+	glColor3d(0,0,0);
+	glRasterPos2f(-80.0f,36.0f);
+	strcpy(frase,"Ingrese una frase");
+	texto(frase);
+
+	glColor3d(0,0,0);
+	glRasterPos2f(-93.0f,0.0f);
+	strcpy(frase,"Frase:");
+	texto(frase);
+
+	glColor3d(red(88),green(24), blue(69));
+	glRasterPos2f(-60.0f,0.0f);
+	strcpy(frase,palabra_actual);
+	texto(frase);
+
+    glColor3d(0,0,0);
+	glRasterPos2f(45.0f,-40.0f);
+	strcpy(frase,"ESC: Cancelar");
+	texto2(frase);
+	
+	glPopMatrix();
+	glutSwapBuffers();
+}
+
+int captura_frase(){
+    FILE *archivo;
+    archivo=fopen("backup.txt", "a+");
+
+    if(!archivo) return -1;
+    int longitud=strlen(frase_agregar);
+    char separar=',';
+
+    fwrite(&separar,sizeof(char),1,archivo);
+    for(int i=0; i<longitud; i++){
+        fwrite(&frase_agregar[i],sizeof(char),1,archivo);
+    }
+    fwrite(&separar,sizeof(char),1,archivo);
+
+    fclose(archivo);
+	elimina_nodos(&raiz);
+	elementos=0;
+	lee_archivo(&raiz,"backup.txt");
 }
