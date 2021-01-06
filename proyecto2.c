@@ -630,19 +630,7 @@ void actualizar(){
             ventana2=0;
             temporizador=0;
         }
-	}
-
-    if(ventana3!=0){ 
-		glutSetWindow(ventana3);
-		glutPostRedisplay();
-        if(temporizador==1){
-            sleep(1.5);
-            glutDestroyWindow(ventana3);
-            ventana3=0;
-            temporizador=0;
-        }
-	}
-    
+	}    
 }
 
 double red(double color){
@@ -664,7 +652,6 @@ void menu_principal(int opcion){
         memset(prediccion,'\0',20); memset(prediccion2,'\0',20); memset(prediccion3,'\0',20);
         memset(palabra,'\0',strlen(palabra_p)); memset(palabra2,'\0',strlen(palabra_p)); memset(palabra3,'\0',strlen(palabra_p));
         memset(palabra4,'\0',strlen(palabra_p)); memset(palabra5,'\0',strlen(palabra_p));*/
-
         glutDestroyWindow(ventana2);
         ventana2=0;
     }
@@ -897,6 +884,12 @@ static void teclado_agregar(unsigned char tecla, int x, int y){
         glutDestroyWindow(glutGetWindow());
 		ventana2=0;
         posicion=0;
+
+        ventana2=glutCreateSubWindow(ventana,270,225,300,150);
+        if(estado==1) glutDisplayFunc(cargando); 
+        if(estado==0)glutDisplayFunc(error);
+        estado=2;
+        temporizador=1;
     }
 
     if(tecla==27){ //Tecla Esc
@@ -943,7 +936,7 @@ static void agregar_archivo(void){
 	glRasterPos2f(45.0f,-40.0f);
 	strcpy(frase,"ESC: Cancelar");
 	texto2(frase);
-	
+
 	glPopMatrix();
 	glutSwapBuffers();
 }
