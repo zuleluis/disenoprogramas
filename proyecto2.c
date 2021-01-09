@@ -51,7 +51,9 @@ int imprime_lista(struct nodo *grafo);
 int imprime_aristas(struct arista *arista);
 int ordena_nodos(struct nodo *grafo);
 int ordena_aristas(struct arista **arista, bool *estado); //Funcion para ordenar aristas de la mas lejana a la mas cercana
-int frases_comunes(struct nodo *grafo, char *palabra);
+int frases_comunes(struct nodo *grafo, int limite);
+int frases_comunes_aristas(struct arista *arista,int limite);
+void concatena_frase(char *palabra, int contador);
 int elimina_nodos(struct nodo **grafo);
 void elimina_aristas(struct arista **arista);
 int cantidad_elementos(struct nodo *grafo);
@@ -83,6 +85,8 @@ double blue(double color);
 void menu_principal(int opcion);
 static void teclado_agregar(unsigned char tecla, int x, int y);
 static void agregar_archivo(void);
+static void teclado_buscar(unsigned char tecla, int x, int y);
+static void buscar_frases_comunes(void);
 static void teclado_predicciones(unsigned char tecla, int x, int y);
 static void prediccion_palabras(void);
 //Ventanas auxiliares
@@ -97,9 +101,10 @@ static void creditos(void);
 int elementos=0; //Cantidad de elementos en el grafo
 int x=100, y=100, rango=0, tam=200; // X: Posicion en X, Y: Posicion en Y, Rango: Ayuda a distribuir los nodos a traves de la ventana. Es decir, si hay 10 elementos, en cada linea habran 3 elementos 
 struct nodo *raiz=NULL;             //Tam: Distancia entre un nodo y otro. A mayor tamaño mayor distancia
-char frase[50], nombrearchivo[30], palabra_actual[30], palabra_siguiente[30], frase_agregar[150];
-int ventana=0,ventana2=0, ventana3=0; //Ventana: Ventana principal, ventana2: Ventana secundaria, ventana3: Ventana para mostrar algunos warnings
-int temporizador, posicion=0, estado=3, estado_prediccion=0;
+char frase[50], nombrearchivo[30], palabra_actual[30], palabra_siguiente[30], frase_agregar[150], frase_comun[150], palabra_buscada[30], palabra_1[30], palabra_2[30], palabra_3[30], palabra_4[30], palabra_5[30];
+int ventana=0,ventana2=0; //Ventana: Ventana principal, ventana2: Ventana secundaria
+int temporizador, posicion=0, estado=3, estado_prediccion=0, estado_oracion=1;
+int posy=5, posy_aux=0; //Para desplazamiento en segunda ventana
 
 
 int main(int argc, char *argv[]){
@@ -109,7 +114,6 @@ int main(int argc, char *argv[]){
 	glutMainLoop(); 
     return 0;
 }
-
 
 //Funcion para insertar una nueva palabra al grafo
 int inserta_nodo(struct nodo **grafo, char *palabra){
@@ -345,26 +349,58 @@ int ordena_aristas(struct arista **arista, bool *estado){
 	ordena_aristas(&(*arista)->siguiente,estado);
 }
 
-int frases_comunes(struct nodo *grafo, char *palabra){
-    struct nodo *pBusqueda=busca_nodo(grafo, palabra);
-    if(!pBusqueda)return -1;
+int frases_comunes(struct nodo *grafo, int limite){
+	if(!grafo) return -1;
+
+	if((!grafo->aristas && limite>0) || limite==5){ //El limite maximo de palabras por frase, en esta ocasion, es seis (la palabra guardada + cinco mas)
+        concatena_frase(grafo->palabra, limite); //Se asigna la ultima palabra
+
+        //Se une todo en un arreglo en comun a excepcion de la palabra 1 ya que esta es la que se busco
+        printf("%s -> ", palabra_buscada);
+        
+        /*glColor3d(1,0,0);
+		glRasterPos2f(xx,yd);
+		sprintf(encabezado,palabra);
+		letras(encabezado);*/
+
+        strcat(frase_comun, palabra_1);
+        strcat(frase_comun, " ");
+        strcat(frase_comun, palabra_2);
+        strcat(frase_comun, " ");
+        strcat(frase_comun, palabra_3);
+        strcat(frase_comun, " ");
+        strcat(frase_comun, palabra_4);
+        strcat(frase_comun, " ");
+        strcat(frase_comun, palabra_5);
+        strcat(frase_comun, " ");
+
+        printf("%s", frase_comun);
+        printf("\n\n");
+        memset(frase_comun, '\0', strlen(frase_comun)); //Vaciando frase comun
+        return 0;
+	}
     
-    int contador=0;
-    struct arista *pArista=pBusqueda->aristas;
+    concatena_frase(grafo->palabra, limite);
+	frases_comunes_aristas(grafo->aristas,limite+1);
+}
 
-    printf("Frases mas comunes\n");
-    printf("%s -> ", pBusqueda->palabra);
+int frases_comunes_aristas(struct arista *arista,int limite){
+	if(!arista) return 0;
+    frases_comunes(arista->vertice,limite);
+    frases_comunes_aristas(arista->siguiente,limite);
+}
 
-    while(pArista){
-        while(pArista->vertice){
-            printf("%s->", pArista->vertice->palabra);
-            pArista->vertice=pArista->vertice->siguiente;
-        }
-        printf("\n\n\n");
-        pArista=pArista->siguiente;
-        contador++;
-    }
-    return 0;
+void concatena_frase(char *palabra, int contador){ //Funcion que ayuda a evitar perder las palabras repetidas de frases anteriores
+	/*//Con esta propuesta de ciclo se pierde la frase que pueda llegar a repetirse
+        strcat(frase_comun, palabra);
+        strcat(frase_comun," ");
+	*/
+    if(contador==0) strcpy(palabra_buscada,palabra);
+    if(contador==1) strcpy(palabra_1,palabra);
+    if(contador==2) strcpy(palabra_2,palabra);
+    if(contador==3)	strcpy(palabra_3,palabra);
+    if(contador==4)	strcpy(palabra_4,palabra);
+    if(contador==5) strcpy(palabra_5,palabra);
 }
 
 int elimina_nodos(struct nodo **grafo){
@@ -647,28 +683,26 @@ double blue(double color){
 
 void menu_principal(int opcion){
     if(ventana2!=0){
-        /*posicion=0; campo=1; leer_archivo=2; posicion_predictiva=0; bandera_agregar_frase=2; bandera_predictiva=0; py=35;
-        memset(frase,'\0',strlen(frase)); memset(palabra_p,'\0',strlen(palabra_p)); memset(nombre_archivo,'\0',100);
-        memset(prediccion,'\0',20); memset(prediccion2,'\0',20); memset(prediccion3,'\0',20);
-        memset(palabra,'\0',strlen(palabra_p)); memset(palabra2,'\0',strlen(palabra_p)); memset(palabra3,'\0',strlen(palabra_p));
-        memset(palabra4,'\0',strlen(palabra_p)); memset(palabra5,'\0',strlen(palabra_p));*/
         glutDestroyWindow(ventana2);
         ventana2=0;
     }
     switch(opcion){
-        case 1:{ //Agregar que pida el nombre del archivo desde la pantalla
+        case 1:{
             ventana2=glutCreateSubWindow(ventana,270,225,300,150);
             glutKeyboardFunc(teclado_agregar);
             glutDisplayFunc(agregar_archivo);
             break;
         };
-        case 2:{ //Prediccion jeje
+        case 2:{ //Prediccion jeje //ESTO NO FUNCIONA AUN OKKKKKKK
             ventana2=glutCreateSubWindow(ventana,270,225,300,150);
             glutKeyboardFunc(teclado_predicciones);
             glutDisplayFunc(prediccion_palabras);
             break;
         };
-        case 3:{ //Frase mas comun jeje :v
+        case 3:{
+            ventana2=glutCreateSubWindow(ventana,0,500,840,100);
+            glutKeyboardFunc(teclado_buscar);
+            glutDisplayFunc(buscar_frases_comunes);
             break;
         };
         case 4:{
@@ -940,6 +974,92 @@ static void agregar_archivo(void){
 	glPopMatrix();
 	glutSwapBuffers();
 }
+
+static void teclado_buscar(unsigned char tecla, int x, int y){
+    if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla=='_' || tecla=='-' || tecla=='.'|| (tecla>='0' && tecla<='9')){
+        palabra_buscada[posicion]=tecla;
+        posicion++;
+    }
+
+    if(tecla==8 && posicion>0){ //Tecla de retroceso
+		posicion--;
+        palabra_buscada[posicion]='\0';
+	}
+
+    if(tecla==13 && posicion>0){ //Tecla de enter
+        struct nodo *pBusqueda=busca_nodo(raiz, palabra_buscada);
+        if(pBusqueda){
+            frases_comunes(pBusqueda,0);
+            if(tecla=='w' || tecla=='W') posy=posy+10;
+            if(tecla=='s' || tecla=='S') posy=posy-10;
+        }
+        else{
+            memset(frase,'\0', 50);
+            memset(palabra_buscada, '\0', 30);
+            estado=0;
+            glutDisplayFunc(error);
+            estado=2;
+            temporizador=1;
+            posicion=0;
+        }
+    }
+
+    if(tecla==27){ //Tecla Esc
+        glutDestroyWindow(glutGetWindow());
+        memset(frase,'\0', 50);
+        memset(palabra_buscada, '\0', 30);
+		ventana2=0;
+        posicion=0;
+    }
+}
+
+static void buscar_frases_comunes(void){
+    glClearColor(0,0,0,0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D (-100,100,-50,50);
+
+    glColor3d(red(233),green(233),blue(233));	
+	glBegin (GL_QUADS);
+        glVertex2f(-99,-46);
+		glVertex2f(-99,46);
+		glVertex2f(99,46);
+		glVertex2f(99,-46);
+	glEnd();
+	
+	glColor3d(0,0,0);
+	glRasterPos2f(-96.0f,30.0f);
+	strcpy(frase,"Ingrese la palabra que desea buscar");
+	texto(frase);
+
+	glColor3d(0,0,0);
+	glRasterPos2f(-96.0f,16.0f);
+	strcpy(frase,"Palabra:");
+	texto(frase);
+
+	glColor3d(red(88),green(24), blue(69));
+	glRasterPos2f(-85.0f,16.0f);
+	strcpy(frase,palabra_buscada);
+	texto(frase);
+
+    glColor3d(0,0,0);
+	glRasterPos2f(73.0f,-40.0f);
+	strcpy(frase,"ESC: Cancelar/Salir");
+	texto2(frase);
+
+    glColor3d(0,0,0);
+	glRasterPos2f(-96.0f,-40.0f);
+	strcpy(frase,"W/S: Desplazamiento");
+	texto2(frase);
+
+	glPopMatrix();
+	glutSwapBuffers();
+}
+
+//----------------------------------------------------------------------------------------------------//
+
 
 int prediccion(struct nodo *grafo, char *palabra){
     struct nodo *pBusqueda=busca_nodo(grafo, palabra);
