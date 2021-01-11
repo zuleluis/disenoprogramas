@@ -9,9 +9,9 @@ Hacer un programa en C que de modo gráfico usando OpenGL:
     - Permita capturar en tiempo de ejecución una frase y que palabra por palabra haga la
       predicción de la palabra siguiente basándose en el camino más corto (Dijkstra) desde
       la primera palabra capturada, una vez capturada debe actualizar el grafo. (2 PTS)
-    - Tenga una opción para desplegar las frases más comunes ordenadas de la más común a
-      la menos, dada una palabra inicial por el usuario. (2 PTS)
-    - Debe mostrar las palabras y las frases en un color distinto.
+    OK - Tenga una opción para desplegar las frases más comunes ordenadas de la más común a
+         la menos, dada una palabra inicial por el usuario. (2 PTS)
+    OK - Debe mostrar las palabras y las frases en un color distinto.
     OK - Tener una opción de limpiar todo el grafo y volver a empezar con uno nuevo.
 */
 
@@ -101,10 +101,12 @@ static void creditos(void);
 int elementos=0; //Cantidad de elementos en el grafo
 int x=100, y=100, rango=0, tam=200; // X: Posicion en X, Y: Posicion en Y, Rango: Ayuda a distribuir los nodos a traves de la ventana. Es decir, si hay 10 elementos, en cada linea habran 3 elementos 
 struct nodo *raiz=NULL;             //Tam: Distancia entre un nodo y otro. A mayor tamaño mayor distancia
-char frase[50], nombrearchivo[30], palabra_actual[30], palabra_siguiente[30], frase_agregar[150], frase_comun[150], palabra_buscada[30], palabra_1[30], palabra_2[30], palabra_3[30], palabra_4[30], palabra_5[30];
+char frase[50], frase_2[50], frase_3[150], nombrearchivo[30], palabra_actual[30], palabra_siguiente[30], frase_agregar[150], frase_comun[150], palabra_buscada[30], palabra_1[30], palabra_2[30], palabra_3[30], palabra_4[30], palabra_5[30];
 int ventana=0,ventana2=0; //Ventana: Ventana principal, ventana2: Ventana secundaria
-int temporizador, posicion=0, estado=3, estado_prediccion=0, estado_oracion=1;
+int temporizador, posicion=0, posicion_frase=0, estado=3, estado_prediccion=0, estado_oracion=1;
 int posy=5, posy_aux=0; //Para desplazamiento en segunda ventana
+//bool inicio; //Para agregar la nueva frase, evalua si ya estaba creado o no el grafo
+bool mitad_frase; //Evalua si en la prediccion la palabra a buscar se encontraba a mitad de frase o no
 
 
 int main(int argc, char *argv[]){
@@ -357,11 +359,6 @@ int frases_comunes(struct nodo *grafo, int limite){
 
         //Se une todo en un arreglo en comun a excepcion de la palabra 1 ya que esta es la que se busco
         printf("%s -> ", palabra_buscada);
-        
-        /*glColor3d(1,0,0);
-		glRasterPos2f(xx,yd);
-		sprintf(encabezado,palabra);
-		letras(encabezado);*/
 
         strcat(frase_comun, palabra_1);
         strcat(frase_comun, " ");
@@ -376,6 +373,19 @@ int frases_comunes(struct nodo *grafo, int limite){
 
         printf("%s", frase_comun);
         printf("\n\n");
+
+        glColor3d(red(0),green(0), blue(100));
+        glRasterPos2f(-96.0f,posy_aux);
+        strcpy(frase_2,palabra_buscada);
+        texto(frase_2);
+
+        glColor3d(red(0),green(0), blue(0));
+        glRasterPos2f(-80.0f,posy_aux);
+        strcpy(frase_3,frase_comun);
+        texto(frase_3);
+
+        posy_aux=posy_aux-15;
+
         memset(frase_comun, '\0', strlen(frase_comun)); //Vaciando frase comun
         return 0;
 	}
@@ -682,7 +692,7 @@ double blue(double color){
 }
 
 void menu_principal(int opcion){
-    if(ventana2!=0){
+    if(ventana2!=0){ //En dado caso de que por X o Y no se haya destruido la ventana 2, la eliminamos aqui
         glutDestroyWindow(ventana2);
         ventana2=0;
     }
@@ -977,8 +987,10 @@ static void agregar_archivo(void){
 
 static void teclado_buscar(unsigned char tecla, int x, int y){
     if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla=='_' || tecla=='-' || tecla=='.'|| (tecla>='0' && tecla<='9')){
-        palabra_buscada[posicion]=tecla;
-        posicion++;
+        if(estado==2 && posicion<30){ //Evitamos que siga registrando mas y mas datos despues de haber dado enter.
+            palabra_buscada[posicion]=tecla;
+            posicion++;
+        }
     }
 
     if(tecla==8 && posicion>0){ //Tecla de retroceso
@@ -989,9 +1001,7 @@ static void teclado_buscar(unsigned char tecla, int x, int y){
     if(tecla==13 && posicion>0){ //Tecla de enter
         struct nodo *pBusqueda=busca_nodo(raiz, palabra_buscada);
         if(pBusqueda){
-            frases_comunes(pBusqueda,0);
-            if(tecla=='w' || tecla=='W') posy=posy+10;
-            if(tecla=='s' || tecla=='S') posy=posy-10;
+            estado=1;
         }
         else{
             memset(frase,'\0', 50);
@@ -1004,12 +1014,16 @@ static void teclado_buscar(unsigned char tecla, int x, int y){
         }
     }
 
+    if((tecla=='w' || tecla=='W') && estado==1) posy=posy+10;
+    if((tecla=='s' || tecla=='S') && estado==1) posy=posy-10;
+
     if(tecla==27){ //Tecla Esc
         glutDestroyWindow(glutGetWindow());
         memset(frase,'\0', 50);
         memset(palabra_buscada, '\0', 30);
 		ventana2=0;
         posicion=0;
+        estado=2;
     }
 }
 
@@ -1049,58 +1063,91 @@ static void buscar_frases_comunes(void){
 	strcpy(frase,"ESC: Cancelar/Salir");
 	texto2(frase);
 
-    glColor3d(0,0,0);
-	glRasterPos2f(-96.0f,-40.0f);
-	strcpy(frase,"W/S: Desplazamiento");
-	texto2(frase);
+    if(estado==1){
+        glColor3d(0,0,0);
+        glRasterPos2f(-96.0f,-40.0f);
+        strcpy(frase,"W/S: Desplazamiento");
+        texto2(frase);
+        posy_aux=posy;
+        frases_comunes(busca_nodo(raiz, palabra_buscada),0);
+    }
 
 	glPopMatrix();
 	glutSwapBuffers();
 }
 
-//----------------------------------------------------------------------------------------------------//
-
-
 int prediccion(struct nodo *grafo, char *palabra){
     struct nodo *pBusqueda=busca_nodo(grafo, palabra);
     if(pBusqueda){
-        strcpy(palabra_actual, grafo->palabra);
-        if(pBusqueda->aristas) strcpy(palabra_siguiente, grafo->aristas->vertice->palabra);
+        /*strcpy(palabra_actual, grafo->palabra);
+        if(pBusqueda->aristas) strcpy(palabra_siguiente, grafo->aristas->vertice->palabra);*/
+        printf("Palabra encontrada\n\n");
     }
     return 0;
 }
 
 static void teclado_predicciones(unsigned char tecla, int x, int y){
-    if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla=='_' || tecla=='-' || tecla=='.'|| (tecla>='0' && tecla<='9') || tecla==32){
-        if(tecla==32){
-            tecla='\0';
-            estado_prediccion=1;
+    if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla==',' || tecla=='.' || tecla==';'|| (tecla>='0' && tecla<='9') || tecla=='!' || tecla=='?' || tecla=='"' || tecla==' ' && posicion_frase<149){
+        if(tecla==' '){ //Separacion de palabra para buscarla y predecir la que sigue
+            memset(palabra_actual, '\0', strlen(palabra_actual));
+            posicion=0;
+            mitad_frase=false;
         }
-        palabra_actual[posicion]=tecla;
-        posicion++;
+        if(mitad_frase==false){
+            palabra_actual[posicion]=tecla;
+            posicion++;
+        }
+        frase_agregar[posicion_frase]=tecla;
+        posicion_frase++;
     }
 
-    if(tecla==8 && posicion>0){ //Tecla de retroceso
+    if(tecla==8 && posicion_frase>0 && posicion>=0){ //Tecla de retroceso
 		posicion--;
-        palabra_actual[posicion]='\0';
+        posicion_frase--;
+        frase_agregar[posicion_frase]='\0';
+
+        if(posicion>0) palabra_actual[posicion]='\0';
+        else{
+            if(frase_agregar[posicion_frase-1]!=' ') mitad_frase=true;
+            else mitad_frase=false;
+            posicion=0;
+            memset(palabra_actual, '\0', 30);
+        }
 	}
 
-    if(tecla==32 && estado_prediccion==1){ //Tecla de espacio
-        prediccion(raiz, palabra_actual);
-		estado_prediccion=0;
-		posicion=0;
-		memset(palabra_actual,'\0',strlen(palabra_actual));
-        /*glutDestroyWindow(glutGetWindow());
-		ventana2=0;
-        posicion=0;*/
+    if(tecla==13 && posicion>0 && posicion_frase>0){ //Tecla de enter
+        /*struct nodo *pBusqueda=busca_nodo(raiz, palabra_buscada);
+        if(pBusqueda){
+            //frases_comunes(pBusqueda,0);
+            if(tecla=='w' || tecla=='W') posy=posy+10;
+            if(tecla=='s' || tecla=='S') posy=posy-10;
+            //posy_aux=posy;
+            estado=1;
+
+        }
+        else{
+            memset(frase,'\0', 50);
+            memset(palabra_buscada, '\0', 30);
+            estado=0;
+            glutDisplayFunc(error);
+            estado=2;
+            temporizador=1;
+            posicion=0;
+        }*/
+
+        //AQUI EMPIEZA LO DIVERTIDO :VVVVV
+        printf("%s", frase_agregar);
     }
 
     if(tecla==27){ //Tecla Esc
         glutDestroyWindow(glutGetWindow());
         memset(frase,'\0', 50);
-        memset(nombrearchivo, '\0', 30);
+        memset(frase_agregar,'\0', 150);
+        memset(palabra_actual, '\0', 30);
 		ventana2=0;
         posicion=0;
+        posicion_frase=0;
+        estado=2;
     }
 }
 
@@ -1132,6 +1179,11 @@ static void prediccion_palabras(void){
 
 	glColor3d(red(88),green(24), blue(69));
 	glRasterPos2f(-60.0f,0.0f);
+	strcpy(frase,frase_agregar);
+	texto(frase);
+
+    glColor3d(red(88),green(24), blue(69));
+	glRasterPos2f(-60.0f,10.0f);
 	strcpy(frase,palabra_actual);
 	texto(frase);
 
@@ -1144,11 +1196,12 @@ static void prediccion_palabras(void){
 	glutSwapBuffers();
 }
 
-int captura_frase(){
+/*int agrega_frase_archivo(){
     FILE *archivo;
     archivo=fopen("backup.txt", "a+");
 
     if(!archivo) return -1;
+
     int longitud=strlen(frase_agregar);
     char separar=',';
 
@@ -1162,4 +1215,4 @@ int captura_frase(){
 	elimina_nodos(&raiz);
 	elementos=0;
 	lee_archivo(&raiz,"backup.txt");
-}
+}*/
