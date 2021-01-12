@@ -1,18 +1,18 @@
 /*
 Hacer un programa en C que de modo gráfico usando OpenGL:
-    OK - Lea un archivo dado por el usuario, que contenga un texto normal (Ver archivo anexo).
-    OK - Genere y muestre un grafo conectado y dirigido, basado en las palabras del archivo.
-    OK - Guarde el grafo y que pueda anexar otro archivo de texto al grafo, actualizando el
-         grafo existente y sin borrar los datos previos.
-    OK - Muestre nodos y sus valores (P(A))
-    OK - Muestre aristas y sus pesos (P(A|B))
+    - Lea un archivo dado por el usuario, que contenga un texto normal (Ver archivo anexo).
+    - Genere y muestre un grafo conectado y dirigido, basado en las palabras del archivo.
+    - Guarde el grafo y que pueda anexar otro archivo de texto al grafo, actualizando el
+      grafo existente y sin borrar los datos previos.
+    - Muestre nodos y sus valores (P(A))
+    - Muestre aristas y sus pesos (P(A|B))
     - Permita capturar en tiempo de ejecución una frase y que palabra por palabra haga la
       predicción de la palabra siguiente basándose en el camino más corto (Dijkstra) desde
       la primera palabra capturada, una vez capturada debe actualizar el grafo. (2 PTS)
-    OK - Tenga una opción para desplegar las frases más comunes ordenadas de la más común a
+    - Tenga una opción para desplegar las frases más comunes ordenadas de la más común a
          la menos, dada una palabra inicial por el usuario. (2 PTS)
-    OK - Debe mostrar las palabras y las frases en un color distinto.
-    OK - Tener una opción de limpiar todo el grafo y volver a empezar con uno nuevo.
+    - Debe mostrar las palabras y las frases en un color distinto.
+    - Tener una opción de limpiar todo el grafo y volver a empezar con uno nuevo.
 */
 
 #include <GL/glut.h>
@@ -218,36 +218,25 @@ int lee_archivo(struct nodo **grafo, char *nombre_archivo){
     while(!feof(archivo)){ //Leemos letra a letra el archivo
         fread(&letra,sizeof(char),1,archivo);
 
-        if(letra=='.' || letra==',' || letra=='-' || letra=='?' || letra=='!' || letra==-62){
-            if(letra==-62) fread(&letra,sizeof(char),1,archivo);
-            fread(&letra,sizeof(char),1,archivo);
-        }
-
-        if(letra==' ' || letra=='\n'){
-            letra='\0';
-        }
-
-
-        //Evalua letras con acentos o ~
         if(letra==-61){
             fread(&letra,sizeof(char),1,archivo);
             letra=evalua_caracter_especial(letra);
         }
 
-        //Evaluamos que la letra no este en mayusculas para evitar duplicidad de palabras
         if(letra>=65 && letra<=90) letra=tolower(letra);
 
         if(letra>=97 && letra<=122){
             palabra[i]=letra;
             i++;
         }
-        if(letra=='\0' && palabra[0]!='\0'){
-            if(!feof(archivo)){
-                palabra[i]='\0';
-                i=0;
+
+        if(letra=='.' || letra==',' || letra=='-' || letra=='?' || letra=='!' || letra==32 || letra=='\n' || letra=='\r' || letra==';' || letra==26 || letra==-62){
+            if(letra==-62 || letra==-65) fread(&letra,sizeof(char),1,archivo);
+            palabra[i]='\0';
+            if(palabra[0]!=0){
                 elementos++;
-                inserta_nodo(grafo, palabra);
                 //printf("Palabra: %s\n", palabra);
+                inserta_nodo(grafo, palabra);
                 if(inicio==0){
                     strcpy(origen, palabra);
                     inicio=1; //Nos ayuda a evaluar que ya empezamos a crear aristas
@@ -259,8 +248,11 @@ int lee_archivo(struct nodo **grafo, char *nombre_archivo){
                     strcpy(origen, destino);
                 }
             }
+            i=0;
+            memset(palabra, '\0', 30);
         }
     }
+    printf("Hay %i elementos registrados\n\n", elementos);
     fclose(archivo);
     return 0;
 }
@@ -359,7 +351,7 @@ int frases_comunes(struct nodo *grafo, int limite){
         concatena_frase(grafo->palabra, limite); //Se asigna la ultima palabra
 
         //Se une todo en un arreglo en comun a excepcion de la palabra 1 ya que esta es la que se busco
-        printf("%s -> ", palabra_buscada);
+        //printf("%s -> ", palabra_buscada);
 
         strcat(frase_comun, palabra_1);
         strcat(frase_comun, " ");
@@ -372,8 +364,8 @@ int frases_comunes(struct nodo *grafo, int limite){
         strcat(frase_comun, palabra_5);
         strcat(frase_comun, " ");
 
-        printf("%s", frase_comun);
-        printf("\n\n");
+        //printf("%s", frase_comun);
+        //printf("\n\n");
 
         glColor3d(red(0),green(0), blue(100));
         glRasterPos2f(-96.0f,posy_aux);
@@ -704,7 +696,7 @@ void menu_principal(int opcion){
             glutDisplayFunc(agregar_archivo);
             break;
         };
-        case 2:{ //Prediccion jeje //ESTO NO FUNCIONA AUN OKKKKKKK
+        case 2:{
             ventana2=glutCreateSubWindow(ventana,270,225,300,150);
             glutKeyboardFunc(teclado_predicciones);
             glutDisplayFunc(prediccion_palabras);
