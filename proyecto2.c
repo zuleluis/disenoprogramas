@@ -61,6 +61,7 @@ int prediccion(struct nodo *grafo, char *palabra);
 
 int lee_archivo(struct nodo **grafo, char *nombre_archivo);
 char evalua_caracter_especial(char letra);
+void borra_archivo_backup();
 
 int prob_ocurrencia(struct nodo **grafo);
 int teorema_bayes(struct nodo *grafo);
@@ -89,6 +90,7 @@ static void teclado_buscar(unsigned char tecla, int x, int y);
 static void buscar_frases_comunes(void);
 static void teclado_predicciones(unsigned char tecla, int x, int y);
 static void prediccion_palabras(void);
+int agrega_frase_archivo();
 //Ventanas auxiliares
 static void guardado_exitosamente(void);
 static void error(void);
@@ -105,7 +107,6 @@ char frase[50], frase_2[50], frase_3[150], nombrearchivo[30], palabra_actual[30]
 int ventana=0,ventana2=0; //Ventana: Ventana principal, ventana2: Ventana secundaria
 int temporizador, posicion=0, posicion_frase=0, estado=3, estado_prediccion=0, estado_oracion=1;
 int posy=5, posy_aux=0; //Para desplazamiento en segunda ventana
-//bool inicio; //Para agregar la nueva frase, evalua si ya estaba creado o no el grafo
 bool mitad_frase; //Evalua si en la prediccion la palabra a buscar se encontraba a mitad de frase o no
 
 
@@ -736,6 +737,7 @@ void menu_principal(int opcion){
             break;
         };
         case 6:{
+            borra_archivo_backup();
             exit(0);
             break;
         };
@@ -1083,20 +1085,34 @@ int prediccion(struct nodo *grafo, char *palabra){
         if(pBusqueda->aristas) strcpy(palabra_siguiente, grafo->aristas->vertice->palabra);*/
         printf("Palabra encontrada\n\n");
     }
+    printf("%s", palabra_actual);
     return 0;
 }
 
 static void teclado_predicciones(unsigned char tecla, int x, int y){
     if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla==',' || tecla=='.' || tecla==';'|| (tecla>='0' && tecla<='9') || tecla=='!' || tecla=='?' || tecla=='"' || tecla==' ' && posicion_frase<149){
         if(tecla==' '){ //Separacion de palabra para buscarla y predecir la que sigue
+            palabra_actual[posicion]='\0';
+            //Aqui es donde se busca la palabra
+            struct nodo *pBusqueda=busca_nodo(raiz, palabra_actual);
+            if(pBusqueda){
+                if(pBusqueda->aristas->vertice) strcpy(palabra_siguiente, pBusqueda->aristas->vertice->palabra);
+            }
+            else memset(palabra_siguiente, '\0', strlen(palabra_siguiente));
+
             memset(palabra_actual, '\0', strlen(palabra_actual));
+            //memset(palabra_siguiente, '\0', strlen(palabra_siguiente));
+            //prediccion(raiz, palabra_actual);
+    
             posicion=0;
             mitad_frase=false;
         }
-        if(mitad_frase==false){
+
+        if(mitad_frase==false && tecla!=' '){
             palabra_actual[posicion]=tecla;
             posicion++;
         }
+    
         frase_agregar[posicion_frase]=tecla;
         posicion_frase++;
     }
@@ -1105,6 +1121,7 @@ static void teclado_predicciones(unsigned char tecla, int x, int y){
 		posicion--;
         posicion_frase--;
         frase_agregar[posicion_frase]='\0';
+        memset(palabra_siguiente, '\0', strlen(palabra_siguiente));
 
         if(posicion>0) palabra_actual[posicion]='\0';
         else{
@@ -1116,27 +1133,17 @@ static void teclado_predicciones(unsigned char tecla, int x, int y){
 	}
 
     if(tecla==13 && posicion>0 && posicion_frase>0){ //Tecla de enter
-        /*struct nodo *pBusqueda=busca_nodo(raiz, palabra_buscada);
-        if(pBusqueda){
-            //frases_comunes(pBusqueda,0);
-            if(tecla=='w' || tecla=='W') posy=posy+10;
-            if(tecla=='s' || tecla=='S') posy=posy-10;
-            //posy_aux=posy;
-            estado=1;
-
-        }
-        else{
-            memset(frase,'\0', 50);
-            memset(palabra_buscada, '\0', 30);
-            estado=0;
-            glutDisplayFunc(error);
-            estado=2;
-            temporizador=1;
-            posicion=0;
-        }*/
-
-        //AQUI EMPIEZA LO DIVERTIDO :VVVVV
-        printf("%s", frase_agregar);
+        agrega_frase_archivo();
+        printf("Frase agregada: %s\n\n", frase_agregar);
+        glutDestroyWindow(glutGetWindow());
+        memset(frase,'\0', 50);
+        memset(frase_agregar,'\0', 150);
+        memset(palabra_actual, '\0', 30);
+        memset(palabra_siguiente, '\0', 30);
+		ventana2=0;
+        posicion=0;
+        posicion_frase=0;
+        estado=2;
     }
 
     if(tecla==27){ //Tecla Esc
@@ -1144,6 +1151,7 @@ static void teclado_predicciones(unsigned char tecla, int x, int y){
         memset(frase,'\0', 50);
         memset(frase_agregar,'\0', 150);
         memset(palabra_actual, '\0', 30);
+        memset(palabra_siguiente, '\0', 30);
 		ventana2=0;
         posicion=0;
         posicion_frase=0;
@@ -1182,10 +1190,15 @@ static void prediccion_palabras(void){
 	strcpy(frase,frase_agregar);
 	texto(frase);
 
-    glColor3d(red(88),green(24), blue(69));
-	glRasterPos2f(-60.0f,10.0f);
+    /*glColor3d(red(88),green(24), blue(69));
+	glRasterPos2f(-60.0f,30.0f);
 	strcpy(frase,palabra_actual);
-	texto(frase);
+	texto(frase);*/
+    
+    glColor3d(red(0),green(0), blue(200));
+    glRasterPos2f(-60.0f,10.0f);
+    strcpy(frase,palabra_siguiente);
+    texto(frase);
 
     glColor3d(0,0,0);
 	glRasterPos2f(45.0f,-40.0f);
@@ -1196,7 +1209,7 @@ static void prediccion_palabras(void){
 	glutSwapBuffers();
 }
 
-/*int agrega_frase_archivo(){
+int agrega_frase_archivo(){
     FILE *archivo;
     archivo=fopen("backup.txt", "a+");
 
@@ -1204,15 +1217,28 @@ static void prediccion_palabras(void){
 
     int longitud=strlen(frase_agregar);
     char separar=',';
+    char finalizar='\n';
 
     fwrite(&separar,sizeof(char),1,archivo);
     for(int i=0; i<longitud; i++){
         fwrite(&frase_agregar[i],sizeof(char),1,archivo);
     }
-    fwrite(&separar,sizeof(char),1,archivo);
+    fwrite(&finalizar,sizeof(char),1,archivo);
 
     fclose(archivo);
 	elimina_nodos(&raiz);
 	elementos=0;
-	lee_archivo(&raiz,"backup.txt");
-}*/
+
+	if (lee_archivo(&raiz,"backup.txt")==0){
+        prob_ocurrencia(&raiz);
+        teorema_bayes(raiz);
+        ordena_nodos(raiz);
+        imprime_lista(raiz);
+        memset(frase,'\0', 50);
+    }
+}
+
+void borra_archivo_backup(){
+    rename("backup.txt", "backup_old.txt");
+    return;
+}
