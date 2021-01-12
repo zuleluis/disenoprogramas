@@ -57,7 +57,6 @@ void concatena_frase(char *palabra, int contador);
 int elimina_nodos(struct nodo **grafo);
 void elimina_aristas(struct arista **arista);
 int cantidad_elementos(struct nodo *grafo);
-int prediccion(struct nodo *grafo, char *palabra);
 
 int lee_archivo(struct nodo **grafo, char *nombre_archivo);
 char evalua_caracter_especial(char letra);
@@ -197,8 +196,8 @@ int lee_archivo(struct nodo **grafo, char *nombre_archivo){
     else strcpy(nombre_backup, "backup.txt");
 
     FILE *archivo, *backup;
-    archivo=fopen(nombre_archivo, "rb+");
-    backup=fopen(nombre_backup, "ab+"); //Como actualizacion para seguir agregando datos
+    archivo=fopen(nombre_archivo, "r+");
+    backup=fopen(nombre_backup, "a+"); //Como actualizacion para seguir agregando datos
 
     if(!archivo) return -1;
     if(!backup) return -1;
@@ -211,7 +210,7 @@ int lee_archivo(struct nodo **grafo, char *nombre_archivo){
     fclose(archivo);
     fclose(backup);
 
-    archivo=fopen(nombre_archivo, "rb+");    
+    archivo=fopen(nombre_archivo, "r+");    
 
     char palabra[30], origen[30], destino[30];
     int i=0, inicio=0;
@@ -227,7 +226,8 @@ int lee_archivo(struct nodo **grafo, char *nombre_archivo){
         if(letra==' ' || letra=='\n'){
             letra='\0';
         }
-        
+
+
         //Evalua letras con acentos o ~
         if(letra==-61){
             fread(&letra,sizeof(char),1,archivo);
@@ -1078,32 +1078,22 @@ static void buscar_frases_comunes(void){
 	glutSwapBuffers();
 }
 
-int prediccion(struct nodo *grafo, char *palabra){
-    struct nodo *pBusqueda=busca_nodo(grafo, palabra);
-    if(pBusqueda){
-        /*strcpy(palabra_actual, grafo->palabra);
-        if(pBusqueda->aristas) strcpy(palabra_siguiente, grafo->aristas->vertice->palabra);*/
-        printf("Palabra encontrada\n\n");
-    }
-    printf("%s", palabra_actual);
-    return 0;
-}
-
 static void teclado_predicciones(unsigned char tecla, int x, int y){
     if((tecla>='a' && tecla<='z') || (tecla>='A' && tecla<='Z') || tecla==',' || tecla=='.' || tecla==';'|| (tecla>='0' && tecla<='9') || tecla=='!' || tecla=='?' || tecla=='"' || tecla==' ' && posicion_frase<149){
         if(tecla==' '){ //Separacion de palabra para buscarla y predecir la que sigue
             palabra_actual[posicion]='\0';
+
             //Aqui es donde se busca la palabra
-            struct nodo *pBusqueda=busca_nodo(raiz, palabra_actual);
-            if(pBusqueda){
-                if(pBusqueda->aristas->vertice) strcpy(palabra_siguiente, pBusqueda->aristas->vertice->palabra);
+            if(raiz){
+                struct nodo *pBusqueda=busca_nodo(raiz, palabra_actual);
+                if(pBusqueda){
+                    if(pBusqueda->aristas->vertice) strcpy(palabra_siguiente, pBusqueda->aristas->vertice->palabra);
+                }
+                else memset(palabra_siguiente, '\0', strlen(palabra_siguiente));
             }
-            else memset(palabra_siguiente, '\0', strlen(palabra_siguiente));
 
             memset(palabra_actual, '\0', strlen(palabra_actual));
-            //memset(palabra_siguiente, '\0', strlen(palabra_siguiente));
-            //prediccion(raiz, palabra_actual);
-    
+                
             posicion=0;
             mitad_frase=false;
         }
@@ -1132,7 +1122,7 @@ static void teclado_predicciones(unsigned char tecla, int x, int y){
         }
 	}
 
-    if(tecla==13 && posicion>0 && posicion_frase>0){ //Tecla de enter
+    if(tecla==13 && posicion_frase>0){ //Tecla de enter
         agrega_frase_archivo();
         printf("Frase agregada: %s\n\n", frase_agregar);
         glutDestroyWindow(glutGetWindow());
